@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package book_parser;
+
+message Empty {}
+message IntValue {
+  int64 value = 1;
+}
+message File {
+  string token = 1;
+  string filename = 2;
+}
+
+service BookParser {
+  rpc PullBook(File) returns(Empty){}
+}
+
