@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 book_parser
 vendor
+*.pb.go
