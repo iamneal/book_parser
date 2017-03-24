@@ -1,0 +1,10 @@
+package: github.com/iamneal/book_parser
+import:
+- package: github.com/golang/protobuf
+  subpackages:
+  - proto
+- package: github.com/joho/godotenv
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: google.golang.org/grpc
