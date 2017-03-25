@@ -25,3 +25,6 @@ _testmain.go
 book_parser
 vendor
 *.pb.go
+*.sw*
+client_secret.env
+
