@@ -1,19 +1,22 @@
 all: build
 
-build: deps install proto-build service-build fmt
+build: deps install proto service fmt
 
 deps: protoc-gen-go glide
 
 install:
 	glide install
 
-service-build:
+run:
+	./book_parser
+
+service:
 	go build
 
 fmt:
 	go fmt ./
 
-proto-build:
+proto:
 	cd server/proto && protoc --go_out=plugins=grpc:. *.proto && cd ../../
 
 protoc-gen-go:
