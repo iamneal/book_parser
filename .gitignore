@@ -26,5 +26,5 @@ book_parser
 vendor
 *.pb.go
 *.sw*
-client_secret.env
+client_secret.json
 
