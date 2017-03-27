@@ -1,5 +1,5 @@
 hash: 8fb382216e3620bf2cf92967dac223f9e1c5f8f600ec8858eb4c316ff0f6595d
-updated: 2017-03-25T15:39:46.008160637-06:00
+updated: 2017-03-26T18:49:18.538166672-06:00
 imports:
 - name: cloud.google.com/go
   version: 49ffa971a17c4464904b69edf6e39708d4a542a9
@@ -9,9 +9,17 @@ imports:
 - name: github.com/golang/protobuf
   version: 8ee79997227bf9b34611aee7946ae64735e6fd93
   subpackages:
+  - jsonpb
   - proto
+  - protoc-gen-go/descriptor
 - name: github.com/googleapis/gax-go
   version: 9af46dd5a1713e8b5cd71106287eba3cefdde50b
+- name: github.com/grpc-ecosystem/grpc-gateway
+  version: 04870f0741c24d2bfc76a7c7db112f4e107e9ada
+  subpackages:
+  - runtime
+  - runtime/internal
+  - utilities
 - name: github.com/joho/godotenv
   version: eaf676fc033919bc7814b970310973dcfe6197e1
 - name: golang.org/x/net
@@ -51,6 +59,10 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
+- name: google.golang.org/genproto
+  version: de9f5e90fe9b278809363f08c2072d2f2a429de7
+  subpackages:
+  - googleapis/api/annotations
 - name: google.golang.org/grpc
   version: 708a7f9f3283aa2d4f6132d287d78683babe55c8
   subpackages:
