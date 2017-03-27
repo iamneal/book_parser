@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"golang.org/x/net/context"
+	"github.com/iamneal/book_parser/server"
 	drive "google.golang.org/api/drive/v3"
 )
 
@@ -11,16 +12,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("got drive service")
-
-	fileService := drive.NewFilesService(driveService)
+	rpcServer := NewRpcDriveServer(driveService)
+	go func() {
+		err := rpcServer.RunRpcServer(":9090")
+		if err != nil {
+			panic(err)
+		}
+	}()
+	err := server.Run("localhost:9090", ":8080")
 	if err != nil {
 		panic(err)
-	}
-	list, err := fileService.List().Corpora("user").Context(context.Background()).
-		Spaces("drive").Do()
-	fmt.Printf("listed files: %+v\n", list)
-	for _, f := range list.Files {
-		fmt.Printf("fileId: %s\n Name: %s\n\n" ,f.Id, f.Name)
-	}
 }
