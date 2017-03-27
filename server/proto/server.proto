@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/api/annotations.proto";
+
 package book_parser;
 
 message Empty {}
@@ -12,6 +14,11 @@ message File {
 }
 
 service BookParser {
-  rpc PullBook(File) returns(Empty){}
+  rpc PullBook(File) returns(Empty){
+    option(google.api.http) = {
+      post: "/book/pull"
+      body: "*"
+    };
+  };
 }
 
