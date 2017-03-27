@@ -60,5 +60,5 @@ func getGoogleDriveConfig() (*oauth2.Config, error) {
 		return nil, err
 	}
 
-	return google.ConfigFromJSON(file, drive.DriveMetadataReadonlyScope)
+	return google.ConfigFromJSON(file, drive.DriveScope)
 }
