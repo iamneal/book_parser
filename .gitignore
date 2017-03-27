@@ -24,7 +24,7 @@ _testmain.go
 *.prof
 book_parser
 vendor
-*.pb.go
+*.pb.*
 *.sw*
 client_secret.json
 
