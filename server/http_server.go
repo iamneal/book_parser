@@ -21,10 +21,12 @@ func Run(rpcLoc, httpLoc string) error {
   if err != nil {
     return err
   }
-	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+	httpMux := http.NewServeMux()
+	httpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
 		res.Write([]byte("hello world"))
 	})
-  return http.ListenAndServe(httpLoc, mux)
+	httpMux.Handle("/api/",http.Handler(mux))
+  return http.ListenAndServe(httpLoc, httpMux)
 }
 
