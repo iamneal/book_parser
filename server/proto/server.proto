@@ -16,8 +16,7 @@ message File {
 service BookParser {
   rpc PullBook(File) returns(Empty){
     option(google.api.http) = {
-      post: "/book/pull"
-      body: "*"
+      get: "/api/pull/book"
     };
   };
 }
