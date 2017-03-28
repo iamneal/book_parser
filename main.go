@@ -16,7 +16,7 @@ func main() {
 			panic(err)
 		}
 	}()
-	err = server.Run("localhost:9090", ":8080")
+	err = server.Run("localhost:9090", "localhost:8080")
 	if err != nil {
 		panic(err)
 	}
