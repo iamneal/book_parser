@@ -1,7 +1,6 @@
 package server
 
 import (
-  "flag"
   "net/http"
 
   "golang.org/x/net/context"
@@ -18,13 +17,13 @@ func Run(rpcLoc, httpLoc string) error {
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
-  err := gw.RegisterYourServiceHandlerFromEndpoint(ctx, mux, rpcLoc, opts)
+  err := gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, rpcLoc, opts)
   if err != nil {
     return err
   }
-	http.HandleFunc("/", func(res http.ResponseWriter, req http.Request) {
+	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
-		res.Write([]byte("hello world")
+		res.Write([]byte("hello world"))
 	})
   return http.ListenAndServe(httpLoc, mux)
 }

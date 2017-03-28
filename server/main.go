@@ -10,11 +10,11 @@ import (
 )
 
 type Server struct {
-	driveServ *drive.Service
+	driveService *drive.Service
 }
 
-func NewRpcDriveService(d *drive.Service) *Server {
-	return &Server{driveServ: d}
+func NewRpcDriveServer(d *drive.Service) *Server {
+	return &Server{driveService: d}
 }
 
 func (s *Server) RunRpcServer(conn string) error {
@@ -31,9 +31,12 @@ func (s *Server) RunRpcServer(conn string) error {
 func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.Empty, error) {
 	fmt.Printf("rpc Server recieved: %+v", file)
 
-	fileService := drive.NewFilesService(driveService)
+	fileService := drive.NewFilesService(s.driveService)
 	list, err := fileService.List().Corpora("user").Context(context.Background()).
 		Spaces("drive").Do()
+	if err != nil {
+		return nil, err
+	}
 
 	fmt.Printf("listed files: %+v\n", list)
 	for _, f := range list.Files {
