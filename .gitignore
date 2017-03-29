@@ -26,5 +26,4 @@ book_parser
 vendor
 *.pb.*
 *.sw*
-client_secret.json
-
+client_secret*.json
