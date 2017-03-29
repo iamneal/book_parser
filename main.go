@@ -16,7 +16,11 @@ func main() {
 			panic(err)
 		}
 	}()
-	err = server.Run("localhost:9090", "localhost:8080")
+	webServer, err := server.NewMyHttpServer("locallhost:9090", "localhost:8080")
+	if err != nil {
+		panic(err)
+	}
+	err = webServer.Run()
 	if err != nil {
 		panic(err)
 	}
