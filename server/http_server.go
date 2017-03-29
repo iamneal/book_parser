@@ -6,27 +6,75 @@ import (
   "golang.org/x/net/context"
   "github.com/grpc-ecosystem/grpc-gateway/runtime"
   "google.golang.org/grpc"
+	"golang.org/x/oauth2"
   gw "github.com/iamneal/book_parser/server/proto"
 )
 
 
-func Run(rpcLoc, httpLoc string) error {
+
+type MyHttpServer struct {
+	HttpMux *http.ServeMux
+	RpcMux *runtime.ServeMux
+	HttpAddr string
+	RpcAddr string
+	Config *oauth2.Config
+	cancel context.CancelFunc
+}
+
+func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
+	mhs := &MyHttpServer{
+		HttpAddr: httpAddr,
+		RpcAddr: rpcAddr,
+	}
   ctx := context.Background()
   ctx, cancel := context.WithCancel(ctx)
-  defer cancel()
+
+	mhs.cancel = cancel
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
-  err := gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, rpcLoc, opts)
+  err := gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
   if err != nil {
-    return err
+    return nil, err
   }
+
+	mhs.RpcMux = mux
+
 	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+
+	mhs.HttpMux = httpMux
+
+	mhs.HttpMux.Handle("/api/",http.Handler(mhs.RpcMux))
+	mhs.HttpMux.HandleFunc("/auth", mhs.HandleAuth)
+	mhs.HttpMux.HandleFunc("/login", mhs.HandleLogin)
+	mhs.HttpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
-		res.Write([]byte("hello world"))
+		jwt := req.Header.Get("driveAccessToken")
+		if jwt != "" {
+			res.Write([]byte("already authenticated"))
+		} else {
+			res.Write([]byte(`
+				<html><body>
+					<button href="/login"> Login with google </button>
+				</body></html>
+			`))
+		}
 	})
-	httpMux.Handle("/api/",http.Handler(mux))
-  return http.ListenAndServe(httpLoc, httpMux)
+	return mhs, nil
 }
 
+func (mhs *MyHttpServer) Run() error {
+  return http.ListenAndServe(mhs.HttpAddr, mhs.HttpMux)
+}
+
+func (mhs *MyHttpServer) Shutdown() error {
+	return nil
+}
+
+func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) {
+
+}
+
+func (mhs *MyHttpServer) HandleLogin(res http.ResponseWriter, req *http.Request) {
+
+}
