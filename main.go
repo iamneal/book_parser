@@ -5,11 +5,7 @@ import (
 )
 
 func main() {
-	driveService, err := getDriveClient()
-	if err != nil {
-		panic(err)
-	}
-	rpcServer := server.NewRpcDriveServer(driveService)
+	rpcServer := server.NewRpcDriveServer(nil)
 	go func() {
 		err := rpcServer.RunRpcServer(":9090")
 		if err != nil {

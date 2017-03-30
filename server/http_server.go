@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
   "net/http"
 
   "golang.org/x/net/context"
@@ -17,6 +18,7 @@ type MyHttpServer struct {
 	RpcMux *runtime.ServeMux
 	HttpAddr string
 	RpcAddr string
+	state string
 	Config *oauth2.Config
 	cancel context.CancelFunc
 }
@@ -60,6 +62,9 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 			`))
 		}
 	})
+	mhs.state = "random"
+
+	// Get the drive config
 	return mhs, nil
 }
 
@@ -72,9 +77,24 @@ func (mhs *MyHttpServer) Shutdown() error {
 }
 
 func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) {
-
+	state := req.FormValue("state")
+	if mhs.state != state {
+		fmt.Printf("INVALID STATE %+v\n", state)
+		http.Redirect(res, req, "/", http.StatusUnauthorized)
+		return
+	}
+	code := req.FormValue("code")
+	_, err := mhs.Config.Exchange(context.Background(), code)
+	if err != nil {
+		fmt.Printf("could not aquire token")
+		http.Redirect(res, req, "/", http.StatusUnauthorized)
+	}
+	// set the jwt with the token
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte("Success!"))
 }
 
 func (mhs *MyHttpServer) HandleLogin(res http.ResponseWriter, req *http.Request) {
-
+	url := mhs.Config.AuthCodeURL(mhs.state)
+	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 }
