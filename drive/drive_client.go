@@ -15,12 +15,7 @@ var (
 	SECRET_LOCATION_NAME = "SECRET_LOCATION"
 )
 
-func getDriveClient() (*drive.Service, error) {
-	config, err := getGoogleDriveConfig()
-	if err != nil {
-		return nil, err
-	}
-
+func GetDriveClient(config *oauth2.Config, token *drive.Token) (*drive.Service, error) {
 	url := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 
 	fmt.Printf("web browser should prompt you at this url: %s\n\ncode: ", url)
@@ -44,7 +39,7 @@ func getDriveClient() (*drive.Service, error) {
 	return drive.New(oauthClient)
 }
 
-func getGoogleDriveConfig() (*oauth2.Config, error) {
+func GetGoogleDriveConfig() (*oauth2.Config, error) {
 	secretLoc := "./client_secret.json"
 
 	if setLoc := os.Getenv(SECRET_LOCATION_NAME); setLoc != "" {
