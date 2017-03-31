@@ -63,16 +63,15 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 	mhs.HttpMux.HandleFunc("/login", mhs.HandleLogin)
 	mhs.HttpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
-		fmt.Printf("headers %+v\n", req.Header)
-		jwt := req.Header.Get(COOKIE_NAME)
-		if jwt != "" {
-			res.Write([]byte("already authenticated"))
-		} else {
+		_, err := req.Cookie(COOKIE_NAME)
+		if err != nil {
 			res.Write([]byte(`
 				<html><body>
 					<button href="/login"> Login with google </button>
 				</body></html>
 			`))
+		} else {
+			res.Write([]byte("already authenticated"))
 		}
 	})
 	mhs.state = "random"
@@ -96,17 +95,19 @@ func (mhs *MyHttpServer) CreateTokenCookie(tok *oauth2.Token) (*http.Cookie, err
 		return nil, err
 	}
 	val := string(valBytes[:])
-	fmt.Printf("the cookie value: %+v", val)
+	fmt.Printf("the cookie value: %+v\n", val)
+	fmt.Printf("the max age: %+v\n", maxAge)
+	fmt.Printf("expires: %+v\n", expires)
 	encoded := base64.StdEncoding.EncodeToString(valBytes)
 
 	return &http.Cookie{
 		Name: COOKIE_NAME,
+		Path: "/",
+		Domain: "localhost",
 		Value: encoded,
 		Expires: expires,
 		MaxAge: maxAge,
-		Secure: true,
 		Raw: val,
-		Unparsed: []string{COOKIE_NAME, val},
 	}, nil
 }
 
