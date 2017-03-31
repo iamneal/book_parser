@@ -3,15 +3,22 @@ package server
 import (
 	"fmt"
   "net/http"
-
+	"os"
   "golang.org/x/net/context"
   "github.com/grpc-ecosystem/grpc-gateway/runtime"
   "google.golang.org/grpc"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
   gw "github.com/iamneal/book_parser/server/proto"
+	drive "google.golang.org/api/drive/v3"
+	"path/filepath"
+	"io/ioutil"
 )
 
 
+var (
+	SECRET_LOCATION_NAME = "SECRET_LOCATION"
+)
 
 type MyHttpServer struct {
 	HttpMux *http.ServeMux
@@ -28,6 +35,7 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 		HttpAddr: httpAddr,
 		RpcAddr: rpcAddr,
 	}
+
   ctx := context.Background()
   ctx, cancel := context.WithCancel(ctx)
 
@@ -39,6 +47,10 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
   if err != nil {
     return nil, err
   }
+	err = mhs.SetGoogleDriveConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	mhs.RpcMux = mux
 
@@ -66,6 +78,30 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 
 	// Get the drive config
 	return mhs, nil
+}
+
+func (mhs *MyHttpServer) SetGoogleDriveConfig() error {
+	secretLoc := "./client_secret.json"
+
+	if setLoc := os.Getenv(SECRET_LOCATION_NAME); setLoc != "" {
+		secretLoc = setLoc
+	}
+	absSecretLoc, err := filepath.Abs(secretLoc)
+	if err != nil {
+		return err
+	}
+
+	file, err := ioutil.ReadFile(absSecretLoc)
+	if err != nil {
+		return err
+	}
+
+	conf, err := google.ConfigFromJSON(file, drive.DriveScope)
+	if err != nil {
+		return err
+	}
+	mhs.Config = conf
+	return nil
 }
 
 func (mhs *MyHttpServer) Run() error {
