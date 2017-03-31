@@ -2,7 +2,10 @@ package server
 
 import (
 	"fmt"
+	"time"
   "net/http"
+	"encoding/json"
+	"encoding/base64"
   "golang.org/x/net/context"
   "github.com/grpc-ecosystem/grpc-gateway/runtime"
   "google.golang.org/grpc"
@@ -60,7 +63,8 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 	mhs.HttpMux.HandleFunc("/login", mhs.HandleLogin)
 	mhs.HttpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
-		jwt := req.Header.Get("driveAccessToken")
+		fmt.Printf("headers %+v\n", req.Header)
+		jwt := req.Header.Get(COOKIE_NAME)
 		if jwt != "" {
 			res.Write([]byte("already authenticated"))
 		} else {
@@ -84,6 +88,28 @@ func (mhs *MyHttpServer) Shutdown() error {
 	return nil
 }
 
+func (mhs *MyHttpServer) CreateTokenCookie(tok *oauth2.Token) (*http.Cookie, error) {
+	expires := tok.Expiry.Add(time.Second * -1)
+	maxAge := int(expires.Sub(time.Now()).Seconds())
+	valBytes, err := json.Marshal(tok)
+	if err != nil {
+		return nil, err
+	}
+	val := string(valBytes[:])
+	fmt.Printf("the cookie value: %+v", val)
+	encoded := base64.StdEncoding.EncodeToString(valBytes)
+
+	return &http.Cookie{
+		Name: COOKIE_NAME,
+		Value: encoded,
+		Expires: expires,
+		MaxAge: maxAge,
+		Secure: true,
+		Raw: val,
+		Unparsed: []string{COOKIE_NAME, val},
+	}, nil
+}
+
 func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) {
 	state := req.FormValue("state")
 	if mhs.state != state {
@@ -92,12 +118,18 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 	code := req.FormValue("code")
-	_, err := mhs.Config.Exchange(context.Background(), code)
+	tok, err := mhs.Config.Exchange(context.Background(), code)
 	if err != nil {
 		fmt.Printf("could not aquire token")
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
 	// set the jwt with the token
+	cookie, err := mhs.CreateTokenCookie(tok)
+	if err != nil {
+		fmt.Printf("error creating cookie: %+v", err)
+		http.Redirect(res, req, "/", http.StatusUnauthorized)
+	}
+	http.SetCookie(res, cookie)
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte("Success!"))
 }

@@ -68,7 +68,7 @@ func (s *Server) getTokenFromCtx(ctx context.Context) (string, error) {
 
 	if ok {
 		fmt.Printf("metadata on the request: %+v", metadata)
-		tokenArr := metadata["token"]
+		tokenArr := metadata[COOKIE_NAME]
 		if len(tokenArr) == 1 {
 			token = tokenArr[0]
 			if token != "" {
