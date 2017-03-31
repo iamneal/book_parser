@@ -8,7 +8,7 @@ import (
   "google.golang.org/grpc"
 	"golang.org/x/oauth2"
   gw "github.com/iamneal/book_parser/server/proto"
-	"github.com/iamneal/book_parser/drive"
+	mydrive "github.com/iamneal/book_parser/mydrive"
 )
 
 
@@ -27,7 +27,7 @@ type MyHttpServer struct {
 }
 
 func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
-	conf, err := getGoogleDriveConfig()
+	conf, err := mydrive.GetGoogleDriveConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -45,20 +45,15 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
-  err := gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
+  err = gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
   if err != nil {
     return nil, err
   }
-	err = mhs.SetGoogleDriveConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	mhs.RpcMux = mux
 
 	httpMux := http.NewServeMux()
 
 	mhs.HttpMux = httpMux
+	mhs.RpcMux = mux
 
 	mhs.HttpMux.Handle("/api/",http.Handler(mhs.RpcMux))
 	mhs.HttpMux.HandleFunc("/auth", mhs.HandleAuth)
