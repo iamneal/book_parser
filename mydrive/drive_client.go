@@ -1,4 +1,4 @@
-package main
+package mydrive
 
 import (
 	"fmt"
@@ -15,14 +15,14 @@ var (
 	SECRET_LOCATION_NAME = "SECRET_LOCATION"
 )
 
-func GetDriveClient(config *oauth2.Config, token *drive.Token) (*drive.Service, error) {
+func GetDriveClient(config *oauth2.Config, token *oauth2.Token) (*drive.Service, error) {
 	url := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 
 	fmt.Printf("web browser should prompt you at this url: %s\n\ncode: ", url)
 	var code string
 
 	//read typed code from stdin
-	_, err = fmt.Scan(&code)
+	_, err := fmt.Scan(&code)
 	if err != nil {
 		return nil, err
 	}
