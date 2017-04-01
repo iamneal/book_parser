@@ -45,6 +45,7 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
   ctx, cancel := context.WithCancel(ctx)
 
 	mhs.cancel = cancel
+	mhs.state = "random"
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
@@ -58,23 +59,10 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 	mhs.HttpMux = httpMux
 	mhs.RpcMux = mux
 
+	mhs.HttpMux.Handle("/", http.FileServer(http.Dir(HTML_LOCATION)))
 	mhs.HttpMux.Handle("/api/",http.Handler(mhs.RpcMux))
 	mhs.HttpMux.HandleFunc("/auth", mhs.HandleAuth)
 	mhs.HttpMux.HandleFunc("/login", mhs.HandleLogin)
-	mhs.HttpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(http.StatusOK)
-		_, err := req.Cookie(COOKIE_NAME)
-		if err != nil {
-			res.Write([]byte(`
-				<html><body>
-					<button href="/login"> Login with google </button>
-				</body></html>
-			`))
-		} else {
-			res.Write([]byte("already authenticated"))
-		}
-	})
-	mhs.state = "random"
 
 	return mhs, nil
 }
@@ -132,7 +120,8 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 	}
 	http.SetCookie(res, cookie)
 	res.WriteHeader(http.StatusOK)
-	res.Write([]byte("Success!"))
+	// cookie.Raw is the stringified json of token
+	res.Write([]byte(cookie.Raw))
 }
 
 func (mhs *MyHttpServer) HandleLogin(res http.ResponseWriter, req *http.Request) {
