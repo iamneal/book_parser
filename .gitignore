@@ -29,18 +29,18 @@ vendor
 client_secret*.json
 
 # dependencies
-/node_modules
+**/node_modules
 
 # testing
-/coverage
+**/coverage
 
 # production
-/build
+**/build
 
 # misc
-.DS_Store
-.env
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+**/.DS_Store
+**/.env
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
 
