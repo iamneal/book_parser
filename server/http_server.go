@@ -2,13 +2,16 @@ package server
 
 import (
 	"fmt"
+	"time"
   "net/http"
+	"encoding/json"
+	"encoding/base64"
   "golang.org/x/net/context"
   "github.com/grpc-ecosystem/grpc-gateway/runtime"
   "google.golang.org/grpc"
 	"golang.org/x/oauth2"
   gw "github.com/iamneal/book_parser/server/proto"
-	"github.com/iamneal/book_parser/drive"
+	mydrive "github.com/iamneal/book_parser/mydrive"
 )
 
 
@@ -27,7 +30,7 @@ type MyHttpServer struct {
 }
 
 func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
-	conf, err := getGoogleDriveConfig()
+	conf, err := mydrive.GetGoogleDriveConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -45,35 +48,30 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
-  err := gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
+  err = gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
   if err != nil {
     return nil, err
   }
-	err = mhs.SetGoogleDriveConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	mhs.RpcMux = mux
 
 	httpMux := http.NewServeMux()
 
 	mhs.HttpMux = httpMux
+	mhs.RpcMux = mux
 
 	mhs.HttpMux.Handle("/api/",http.Handler(mhs.RpcMux))
 	mhs.HttpMux.HandleFunc("/auth", mhs.HandleAuth)
 	mhs.HttpMux.HandleFunc("/login", mhs.HandleLogin)
 	mhs.HttpMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
-		jwt := req.Header.Get("driveAccessToken")
-		if jwt != "" {
-			res.Write([]byte("already authenticated"))
-		} else {
+		_, err := req.Cookie(COOKIE_NAME)
+		if err != nil {
 			res.Write([]byte(`
 				<html><body>
 					<button href="/login"> Login with google </button>
 				</body></html>
 			`))
+		} else {
+			res.Write([]byte("already authenticated"))
 		}
 	})
 	mhs.state = "random"
@@ -89,6 +87,30 @@ func (mhs *MyHttpServer) Shutdown() error {
 	return nil
 }
 
+func (mhs *MyHttpServer) CreateTokenCookie(tok *oauth2.Token) (*http.Cookie, error) {
+	expires := tok.Expiry.Add(time.Second * -1)
+	maxAge := int(expires.Sub(time.Now()).Seconds())
+	valBytes, err := json.Marshal(tok)
+	if err != nil {
+		return nil, err
+	}
+	val := string(valBytes[:])
+	fmt.Printf("the cookie value: %+v\n", val)
+	fmt.Printf("the max age: %+v\n", maxAge)
+	fmt.Printf("expires: %+v\n", expires)
+	encoded := base64.StdEncoding.EncodeToString(valBytes)
+
+	return &http.Cookie{
+		Name: COOKIE_NAME,
+		Path: "/",
+		Domain: "localhost",
+		Value: encoded,
+		Expires: expires,
+		MaxAge: maxAge,
+		Raw: val,
+	}, nil
+}
+
 func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) {
 	state := req.FormValue("state")
 	if mhs.state != state {
@@ -97,12 +119,18 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 	code := req.FormValue("code")
-	_, err := mhs.Config.Exchange(context.Background(), code)
+	tok, err := mhs.Config.Exchange(context.Background(), code)
 	if err != nil {
 		fmt.Printf("could not aquire token")
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
 	// set the jwt with the token
+	cookie, err := mhs.CreateTokenCookie(tok)
+	if err != nil {
+		fmt.Printf("error creating cookie: %+v", err)
+		http.Redirect(res, req, "/", http.StatusUnauthorized)
+	}
+	http.SetCookie(res, cookie)
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte("Success!"))
 }

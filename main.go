@@ -5,14 +5,17 @@ import (
 )
 
 func main() {
-	rpcServer := server.NewRpcDriveServer(nil)
+	rpcServer, err := server.NewRpcDriveServer()
+	if err != nil {
+		panic(err)
+	}
 	go func() {
-		err := rpcServer.RunRpcServer(":9090")
+		err := rpcServer.RunRpcServer("localhost:9090")
 		if err != nil {
 			panic(err)
 		}
 	}()
-	webServer, err := server.NewMyHttpServer("locallhost:9090", "localhost:8080")
+	webServer, err := server.NewMyHttpServer("localhost:9090", "localhost:8080")
 	if err != nil {
 		panic(err)
 	}
