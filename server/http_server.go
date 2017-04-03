@@ -119,9 +119,7 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
 	http.SetCookie(res, cookie)
-	res.WriteHeader(http.StatusOK)
-	// cookie.Raw is the stringified json of token
-	res.Write([]byte(cookie.Raw))
+	http.Redirect(res, req, fmt.Sprintf("/?%s=%s",COOKIE_NAME, cookie), http.StatusFound)
 }
 
 func (mhs *MyHttpServer) HandleLogin(res http.ResponseWriter, req *http.Request) {
