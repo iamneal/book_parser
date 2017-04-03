@@ -1,6 +1,6 @@
-all: build
+all: deps install build fmt
 
-build: deps install proto service fmt
+build: proto web-server web-app
 
 deps: protoc-gen-go grpc-gateway glide
 
@@ -10,8 +10,11 @@ install:
 run:
 	./book_parser
 
-service:
+web-server:
 	go build
+
+web-app:
+	cd ./server/web_app && npm run build
 
 fmt:
 	go fmt ./
