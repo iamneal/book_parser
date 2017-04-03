@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { Watcher } from "./fetcher.js"; 
+import { Watcher } from "./watcher.js"; 
 
 class App extends Component {
   constructor() {
@@ -12,8 +12,6 @@ class App extends Component {
 
   login(e) {
     window.location = "/login"
-    //e.preventDefault()
-    //this.state.watcher.login()
   }
 
   bindAll() {
