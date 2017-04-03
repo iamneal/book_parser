@@ -1,8 +1,25 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import { Watcher } from "./fetcher.js"; 
 
 class App extends Component {
+  constructor() {
+    super()
+    this.state = { watcher: new Watcher() }
+    this.bindAll()
+  }
+
+  login(e) {
+    window.location = "/login"
+    //e.preventDefault()
+    //this.state.watcher.login()
+  }
+
+  bindAll() {
+    this.login = this.login.bind(this)
+  }
+
   render() {
     return (
       <div className="App">
@@ -13,6 +30,11 @@ class App extends Component {
         <p className="App-intro">
           To get started, edit <code>src/App.js</code> and save to reload.
         </p>
+        <div>
+          <button onClick={this.login}>
+            Login
+          </button>
+        </div>
       </div>
     );
   }
