@@ -10,12 +10,12 @@ func main() {
 		panic(err)
 	}
 	go func() {
-		err := rpcServer.RunRpcServer("localhost:9090")
+		err := rpcServer.RunRpcServer("0.0.0.0:9090")
 		if err != nil {
 			panic(err)
 		}
 	}()
-	webServer, err := server.NewMyHttpServer("localhost:9090", "localhost:8080")
+	webServer, err := server.NewMyHttpServer("0.0.0.0:9090", "0.0.0.0:8080")
 	if err != nil {
 		panic(err)
 	}
