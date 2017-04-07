@@ -40,3 +40,9 @@ grpc-gateway:
 
 glide:
 	go get -u github.com/Masterminds/glide
+
+yarn:
+	curl -o- -L https://yarnpkg.com/install.sh | bash
+
+create-react-app:
+	npm install -g create-react-app
