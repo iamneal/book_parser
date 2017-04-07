@@ -6,6 +6,7 @@ deps: protoc-gen-go grpc-gateway glide
 
 install:
 	glide install
+	cd ./server/web_app && yarn install
 
 run:
 	./book_parser
