@@ -54,6 +54,6 @@ func GetGoogleDriveConfig() (*oauth2.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return google.ConfigFromJSON(file, drive.DriveScope)
+	userProfileScope := "https://www.googleapis.com/auth/userinfo.profile"
+	return google.ConfigFromJSON(file, drive.DriveScope, userProfileScope)
 }
