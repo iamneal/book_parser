@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"time"
+	"io/ioutil"
   "net/http"
 	"encoding/json"
 	"encoding/base64"
@@ -27,6 +28,7 @@ type MyHttpServer struct {
 	state string
 	Config *oauth2.Config
 	cancel context.CancelFunc
+	Clients map[*oauth2.Token]*http.Client
 }
 
 func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
@@ -39,6 +41,7 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 		HttpAddr: httpAddr,
 		RpcAddr: rpcAddr,
 		Config: conf,
+		Clients: make(map[*oauth2.Token]*http.Client),
 	}
 
   ctx := context.Background()
@@ -108,17 +111,31 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 	}
 	code := req.FormValue("code")
 	tok, err := mhs.Config.Exchange(context.Background(), code)
+
 	if err != nil {
-		fmt.Printf("could not aquire token")
+		fmt.Printf("could not aquire token\n")
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
+	mhs.Clients[tok] = mhs.Config.Client(context.Background(), tok)
 	// set the jwt with the token
 	cookie, err := mhs.CreateTokenCookie(tok)
 	if err != nil {
-		fmt.Printf("error creating cookie: %+v", err)
+		fmt.Printf("error creating cookie: %+v\n", err)
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
 	http.SetCookie(res, cookie)
+	resp, err := mhs.Clients[tok].Get("https://www.googleapis.com/userinfo/v2/me")
+	if err != nil {
+		fmt.Printf("could not get profile, %s\n", err)
+		http.Redirect(res, req, "/", http.StatusUnauthorized)
+	}
+	fmt.Printf("THE RESPONSE:: %#v\n%+v\n", resp, resp)
+	credBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading the profile response body %s\n", err)
+		http.Redirect(res, req, "/", http.StatusUnauthorized)
+	}
+	fmt.Printf("\ncreds? %s\n", string(credBytes[:]))
 	http.Redirect(res, req, fmt.Sprintf("/?%s=%s",COOKIE_NAME, cookie.Raw), http.StatusFound)
 }
 
