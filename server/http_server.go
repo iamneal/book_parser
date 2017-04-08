@@ -16,9 +16,6 @@ import (
 )
 
 
-var (
-	SECRET_LOCATION_NAME = "SECRET_LOCATION"
-)
 
 type MyHttpServer struct {
 	HttpMux *http.ServeMux
