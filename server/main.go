@@ -15,16 +15,15 @@ import (
 )
 
 type Server struct {
-	Config *oauth2.Config
-	Tokens map[string] *drive.Service
+	Cache OAuth2TokenCache
 }
 
 func NewRpcDriveServer() (*Server, error) {
-	conf, err := mydrive.GetGoogleDriveConfig()
+	cache, err := NewOAuth2TokenCache()
 	if err != nil {
 		return nil, err
 	}
-	return &Server{Config: conf}, nil
+	return &Server{Cache: cache}, nil
 }
 
 func (s *Server) RunRpcServer(conn string) error {
@@ -92,7 +91,7 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.Empty, error)
 		}
 		token = tok
 	}
-	serv, err := s.FindDriveService(token)
+	userCache, err := s.Cache.Get(token)
 	if err != nil {
 		return nil, fmt.Errorf("bad token")
 	}
