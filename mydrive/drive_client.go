@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	drive "google.golang.org/api/drive/v3"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 )
 
 var (
@@ -39,21 +36,3 @@ func GetDriveClient(config *oauth2.Config, token *oauth2.Token) (*drive.Service,
 	return drive.New(oauthClient)
 }
 
-func GetGoogleDriveConfig() (*oauth2.Config, error) {
-	secretLoc := "./client_secret.json"
-
-	if setLoc := os.Getenv(SECRET_LOCATION_NAME); setLoc != "" {
-		secretLoc = setLoc
-	}
-	absSecretLoc, err := filepath.Abs(secretLoc)
-	if err != nil {
-		return nil, err
-	}
-
-	file, err := ioutil.ReadFile(absSecretLoc)
-	if err != nil {
-		return nil, err
-	}
-	userProfileScope := "https://www.googleapis.com/auth/userinfo.profile"
-	return google.ConfigFromJSON(file, drive.DriveScope, userProfileScope)
-}
