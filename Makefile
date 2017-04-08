@@ -2,7 +2,7 @@ all: deps install build fmt
 
 build: proto web-server web-app
 
-deps: protoc-gen-go grpc-gateway glide
+deps: protoc-gen-go grpc-gateway glide yarn create-react-app
 
 install:
 	glide install
