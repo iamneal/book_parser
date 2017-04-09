@@ -2,11 +2,9 @@ package server;
 
 import (
 	pb "github.com/iamneal/book_parser/server/proto"
-	mydrive "github.com/iamneal/book_parser/mydrive"
 	drive "google.golang.org/api/drive/v3"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"time"
 	"fmt"
 	"net"
 	"google.golang.org/grpc"
@@ -15,15 +13,11 @@ import (
 )
 
 type Server struct {
-	Cache OAuth2TokenCache
+	Cache *OAuth2TokenCache
 }
 
-func NewRpcDriveServer() (*Server, error) {
-	cache, err := NewOAuth2TokenCache()
-	if err != nil {
-		return nil, err
-	}
-	return &Server{Cache: cache}, nil
+func NewRpcDriveServer(cache *OAuth2TokenCache) (*Server) {
+	return &Server{Cache: cache}
 }
 
 func (s *Server) RunRpcServer(conn string) error {
@@ -35,30 +29,6 @@ func (s *Server) RunRpcServer(conn string) error {
 
 	pb.RegisterBookParserServer(server, s)
 	return server.Serve(listener)
-}
-
-func (s *Server) FindDriveService(token string) (*drive.Service, error) {
-	tok := new(oauth2.Token)
-	err := json.Unmarshal([]byte(token), tok)
-	if err != nil {
-		return nil, err
-	}
-	// check if the token is expired
-	now := time.Now()
-	if tok.Expiry.After(now) {
-		return nil, fmt.Errorf("token expired")
-	}
-	//check if there is a drive service in the Tokens map
-	serv := s.Tokens[token]
-	if serv != nil {
-		return serv, nil
-	}
-	serv, err = mydrive.GetDriveClient(s.Config, tok)
-	if err != nil {
-		return nil, err
-	}
-	s.Tokens[token] = serv
-	return serv, nil
 }
 
 func (s *Server) getTokenFromCtx(ctx context.Context) (string, error) {
@@ -80,23 +50,36 @@ func (s *Server) getTokenFromCtx(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("no token found on metadata")
 }
 
+func (s *Server) DebugPrintCache(ctx context.Context, em *pb.Empty) (*pb.Empty, error) {
+	fmt.Println("Debug Print")
+	fmt.Printf("cache: %#v", s.Cache)
+	return &pb.Empty{}, nil
+}
+
 func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.Empty, error) {
 	fmt.Printf("rpc Server recieved: %+v", file)
-	token := file.Token
+	tokenStr := file.Token
 
-	if token == "" {
+	if tokenStr == "" {
 		tok, err := s.getTokenFromCtx(ctx)
 		if err != nil {
 			return nil, err
 		}
-		token = tok
+		tokenStr = tok
 	}
-	userCache, err := s.Cache.Get(token)
+
+	tok := new(oauth2.Token)
+	err := json.Unmarshal([]byte(tokenStr), tok)
 	if err != nil {
-		return nil, fmt.Errorf("bad token")
+		return nil, err
 	}
-	fileService := drive.NewFilesService(serv)
-	list, err := fileService.List().Corpora("user").Context(context.Background()).
+
+	userCache, err := s.Cache.Get(tokenStr)
+	if err != nil {
+		return nil, err
+	}
+	fs := drive.NewFilesService(userCache.Drive)
+	list, err := fs.List().Corpora("user").Context(context.Background()).
 		Spaces("drive").Do()
 	if err != nil {
 		return nil, err
