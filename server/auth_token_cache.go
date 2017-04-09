@@ -1,6 +1,9 @@
 package server
 
 import(
+	"os"
+	"fmt"
+	"context"
 	"time"
 	"errors"
 	"io/ioutil"
@@ -14,25 +17,25 @@ import(
 var BadCache = errors.New("the access token has expired")
 
 type UpdateToken struct {
-	Update func(*oauth2.Token, *User)
+	Update func(*oauth2.Token, *oauth2.Token)
 	User *User
-	Token *oauth2.Token
-	Parent oauth2.TokenSrc
+	CurToken *oauth2.Token
+	Parent oauth2.TokenSource
 }
 
-func (ut *UpdateToken) Token() (*oauth2.Token, error) {
+func (ut UpdateToken) Token() (*oauth2.Token, error) {
 	if ut.User == nil {
-		return ut.Token, fmt.Errorf("No user set in UpdateToken")
+		return ut.CurToken, fmt.Errorf("No user set in UpdateToken")
 	}
-	tok, err := ut.Parent.Token()
+	token, err := ut.Parent.Token()
 	if err != nil {
 		return nil, err
 	}
-	if tok.AccessToken != ut.Token.AccessToken {
-		ut.Update(tok, ut.User)
+	if token.AccessToken != ut.CurToken.AccessToken {
+		ut.Update(ut.CurToken, token)
 	}
-	ut.Token = tok
-	return ut.Token, nil
+	ut.CurToken = token
+	return ut.CurToken, nil
 }
 
 
@@ -55,16 +58,20 @@ type OAuth2TokenCache struct {
 	Config *oauth2.Config
 }
 
+func NewUserFromBytes(bytes []byte) (*User, error) {
+	return nil, fmt.Errorf("Unimplemented")
+}
+
 func NewOAuth2TokenCache() (*OAuth2TokenCache, error) {
-	conf, err := GetGooleAuthConfig()
+	conf, err := GetGoogleAuthConfig()
 	if err != nil {
 		return nil, err
 	}
 	// TODO instead of starting with a new map everytime,  read serialized tokens from a file
 	return &OAuth2TokenCache{
-		Tokens make(map[string]*UserCache)
+		Tokens: make(map[string]*UserCache),
 		Config: conf,
-	}
+	}, nil
 }
 
 func (t *OAuth2TokenCache) Get(tok string) (*UserCache, error ) {
@@ -73,35 +80,46 @@ func (t *OAuth2TokenCache) Get(tok string) (*UserCache, error ) {
 		return nil, BadCache
 	}
 	if time.Now().Before(cache.Token.Expiry) {
-		return cache
+		return cache, nil
 	}
 	return nil, BadCache
 }
 
-func (t *OAuth2TokenCache) NewToken(ctx context, code string) (*Token, error) {
+func (t *OAuth2TokenCache) UpdateOldToken(tok string) (string, error) {
+	cache := t.Tokens[tok]
+	if cache == nil || cache.Token == nil || cache.Token.AccessToken == "" {
+		return "", fmt.Errorf("cache for token not found or updated. Token: %s", tok)
+	}
+	if cache.Token.AccessToken == tok {
+		fmt.Println("tried to update a token that is up to date...")
+	}
+	t.Tokens[cache.Token.AccessToken] = cache
+	delete(t.Tokens, tok)
+
+	return cache.Token.AccessToken, nil
+}
+
+func (t *OAuth2TokenCache) NewToken(ctx context.Context, code string) (*oauth2.Token, error) {
 	tok, err := t.Config.Exchange(ctx, code)
 	if err != nil {
 		return nil, err
 	}
 	tknSrc := UpdateToken{
 		Parent: oauth2.ReuseTokenSource(tok, nil),
-		Token: tok,
-		Update: func(oldt, newt oauth2.Token) {
+		CurToken: tok,
+		Update: func(oldt, newt *oauth2.Token) {
 			if cache, exists := t.Tokens[oldt.AccessToken]; exists && cache != nil {
-				delete(t.Tokens[olt.AccessToken])
-				t.Tokens[newt] = cache
-				cache.Token = token
+				// delete(t.Tokens[olt.AccessToken])
+				// t.Tokens[newt] = cache
+				cache.Token = newt
 			} else {
-				fmt.Printf("USER DID NOT EXIST on UpdateToken request: %#v\n", u)
-				t.Tokens[newt] = &UserCache{
-					Token: token,
-					RefreshToken: token.RefreshToken,
-				}
+				fmt.Printf("USER DID NOT EXIST on UpdateToken request: %#v\n", oldt)
+				t.Tokens[newt.AccessToken] = &UserCache{Token: newt}
 			}
 		},
 	}
-	tempCli := t.Config.NewClient(ctx, tknSrc)
-	resp, err := tempCli.Get("https://www.googleapis.com/userinfo/v2/me")
+	httpCli := oauth2.NewClient(ctx, tknSrc)
+	resp, err := httpCli.Get("https://www.googleapis.com/userinfo/v2/me")
 	if err != nil {
 		return nil, err
 	}
@@ -109,19 +127,19 @@ func (t *OAuth2TokenCache) NewToken(ctx context, code string) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	user, err := t.UserFromBytes(userBytes)
+	user, err := NewUserFromBytes(userBytes)
 	if err != nil {
 		return nil, err
 	}
 	driveCli, err := drive.New(httpCli)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	t.Tokens[tok] = user
-	t.Clients[user] = &UserCache {
-		AccessToken: tok,
+	t.Tokens[tok.AccessToken] = &UserCache {
+		Token: tok,
+		User: user,
 		Http: httpCli,
-		Drive: drive,
+		Drive: driveCli,
 	}
 
 	return tok, nil
