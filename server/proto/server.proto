@@ -19,5 +19,10 @@ service BookParser {
       get: "/api/pull/book"
     };
   };
+  rpc DebugPrintCache(Empty) returns(Empty){
+    option(google.api.http) = {
+      get: "/api/debug"
+    };
+  };
 }
 
