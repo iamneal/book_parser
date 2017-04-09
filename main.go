@@ -5,7 +5,11 @@ import (
 )
 
 func main() {
-	rpcServer, err := server.NewRpcDriveServer()
+	cache, err := server.NewOAuth2TokenCache()
+	if err != nil {
+		panic(err)
+	}
+	rpcServer := server.NewRpcDriveServer(cache)
 	if err != nil {
 		panic(err)
 	}
@@ -15,7 +19,7 @@ func main() {
 			panic(err)
 		}
 	}()
-	webServer, err := server.NewMyHttpServer("0.0.0.0:9090", "0.0.0.0:8080")
+	webServer, err := server.NewMyHttpServer("0.0.0.0:9090", "0.0.0.0:8080", cache)
 	if err != nil {
 		panic(err)
 	}
