@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"time"
-	"io/ioutil"
   "net/http"
 	"encoding/json"
 	"encoding/base64"
@@ -12,7 +11,6 @@ import (
   "google.golang.org/grpc"
 	"golang.org/x/oauth2"
   gw "github.com/iamneal/book_parser/server/proto"
-	mydrive "github.com/iamneal/book_parser/mydrive"
 )
 
 
@@ -23,22 +21,15 @@ type MyHttpServer struct {
 	HttpAddr string
 	RpcAddr string
 	state string
-	Config *oauth2.Config
 	cancel context.CancelFunc
-	Clients map[*oauth2.Token]*http.Client
+	Cache *OAuth2TokenCache
 }
 
-func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
-	conf, err := mydrive.GetGoogleDriveConfig()
-	if err != nil {
-		return nil, err
-	}
-
+func NewMyHttpServer(rpcAddr, httpAddr string, cache *OAuth2TokenCache) (*MyHttpServer, error) {
 	mhs := &MyHttpServer{
 		HttpAddr: httpAddr,
 		RpcAddr: rpcAddr,
-		Config: conf,
-		Clients: make(map[*oauth2.Token]*http.Client),
+		Cache: cache,
 	}
 
   ctx := context.Background()
@@ -49,7 +40,7 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
-  err = gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
+  err := gw.RegisterBookParserHandlerFromEndpoint(ctx, mux, mhs.RpcAddr, opts)
   if err != nil {
     return nil, err
   }
@@ -63,6 +54,7 @@ func NewMyHttpServer(rpcAddr, httpAddr string) (*MyHttpServer, error) {
 	mhs.HttpMux.Handle("/api/",http.Handler(mhs.RpcMux))
 	mhs.HttpMux.HandleFunc("/auth", mhs.HandleAuth)
 	mhs.HttpMux.HandleFunc("/login", mhs.HandleLogin)
+	mhs.HttpMux.HandleFunc("/update/token", mhs.HandleUpdateToken)
 
 	return mhs, nil
 }
@@ -99,6 +91,18 @@ func (mhs *MyHttpServer) CreateTokenCookie(tok *oauth2.Token) (*http.Cookie, err
 	}, nil
 }
 
+func (mhs *MyHttpServer) HandleUpdateToken(res http.ResponseWriter, req *http.Request) {
+	oldTok := req.FormValue("token")
+	fmt.Printf("handleUpdateToken called with: %s", oldTok)
+
+	newTok, err := mhs.Cache.UpdateOldToken(oldTok)
+	if err != nil {
+		res.WriteHeader(http.StatusUnauthorized)
+	}
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(newTok))
+}
+
 func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) {
 	state := req.FormValue("state")
 	if mhs.state != state {
@@ -107,13 +111,11 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 	code := req.FormValue("code")
-	tok, err := mhs.Config.Exchange(context.Background(), code)
-
+	tok, err := mhs.Cache.NewToken(context.Background(), code)
 	if err != nil {
 		fmt.Printf("could not aquire token\n")
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
-	mhs.Clients[tok] = mhs.Config.Client(context.Background(), tok)
 	// set the jwt with the token
 	cookie, err := mhs.CreateTokenCookie(tok)
 	if err != nil {
@@ -121,22 +123,10 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
 	}
 	http.SetCookie(res, cookie)
-	resp, err := mhs.Clients[tok].Get("https://www.googleapis.com/userinfo/v2/me")
-	if err != nil {
-		fmt.Printf("could not get profile, %s\n", err)
-		http.Redirect(res, req, "/", http.StatusUnauthorized)
-	}
-	fmt.Printf("THE RESPONSE:: %#v\n%+v\n", resp, resp)
-	credBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Error reading the profile response body %s\n", err)
-		http.Redirect(res, req, "/", http.StatusUnauthorized)
-	}
-	fmt.Printf("\ncreds? %s\n", string(credBytes[:]))
 	http.Redirect(res, req, fmt.Sprintf("/?%s=%s",COOKIE_NAME, cookie.Raw), http.StatusFound)
 }
 
 func (mhs *MyHttpServer) HandleLogin(res http.ResponseWriter, req *http.Request) {
-	url := mhs.Config.AuthCodeURL(mhs.state)
+	url := mhs.Cache.Config.AuthCodeURL(mhs.state)
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 }
