@@ -6,8 +6,8 @@ import { Watcher } from "./watcher.js";
 class App extends Component {
   constructor() {
     super()
-    this.state = { watcher: new Watcher() }
     this.bindAll()
+    this.state = { watcher: new Watcher() }
   }
 
   login(e) {
@@ -27,11 +27,15 @@ class App extends Component {
         <p className="App-intro">
           To get started, edit <code>src/App.js</code> and save to reload.
         </p>
-        <div>
-          <button onClick={this.login}>
-            Login
-          </button>
-        </div>
+        {(this.state.watcher.token === "") ? (
+          <div>
+            <button onClick={this.login}>
+              Login
+            </button>
+          </div>
+        ) : (
+          <div> Nothing </div>
+        )}
       </div>
     );
   }
