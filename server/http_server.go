@@ -113,14 +113,16 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 	code := req.FormValue("code")
 	tok, err := mhs.Cache.NewToken(context.Background(), code)
 	if err != nil {
-		fmt.Printf("could not aquire token\n")
+		fmt.Printf("could not aquire token: %+v\n", err)
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
+		return
 	}
 	// set the jwt with the token
 	cookie, err := mhs.CreateTokenCookie(tok)
 	if err != nil {
 		fmt.Printf("error creating cookie: %+v\n", err)
 		http.Redirect(res, req, "/", http.StatusUnauthorized)
+		return
 	}
 	http.SetCookie(res, cookie)
 	http.Redirect(res, req, fmt.Sprintf("/?%s=%s",COOKIE_NAME, cookie.Raw), http.StatusFound)
