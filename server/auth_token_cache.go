@@ -6,6 +6,7 @@ import(
 	"context"
 	"time"
 	"errors"
+	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 	"golang.org/x/oauth2"
@@ -23,9 +24,9 @@ type UpdateToken struct {
 	Parent oauth2.TokenSource
 }
 
-func (ut UpdateToken) Token() (*oauth2.Token, error) {
+func (ut *UpdateToken) Token() (*oauth2.Token, error) {
 	if ut.User == nil {
-		return ut.CurToken, fmt.Errorf("No user set in UpdateToken")
+		return ut.CurToken, nil
 	}
 	token, err := ut.Parent.Token()
 	if err != nil {
@@ -59,7 +60,13 @@ type OAuth2TokenCache struct {
 }
 
 func NewUserFromBytes(bytes []byte) (*User, error) {
-	return nil, fmt.Errorf("Unimplemented")
+	fmt.Printf("userbytes: %s\n", bytes)
+	user := new(User)
+	err := json.Unmarshal(bytes, user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func NewOAuth2TokenCache() (*OAuth2TokenCache, error) {
@@ -104,7 +111,7 @@ func (t *OAuth2TokenCache) NewToken(ctx context.Context, code string) (*oauth2.T
 	if err != nil {
 		return nil, err
 	}
-	tknSrc := UpdateToken{
+	tknSrc := &UpdateToken{
 		Parent: oauth2.ReuseTokenSource(tok, nil),
 		CurToken: tok,
 		Update: func(oldt, newt *oauth2.Token) {
