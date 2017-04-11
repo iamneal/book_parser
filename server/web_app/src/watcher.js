@@ -5,6 +5,9 @@ let TOKEN_KEY = "GRPC-Metadata-book_parser_token"
 class Watcher {
   constructor() {
     this.token = ""
+    console.log("looking for tokens in query string")
+    this.parseLoginToken()
+    console.log("token now: ", this.token)
   }
 
   getTokenFromCookie() {
@@ -17,16 +20,31 @@ class Watcher {
   }
 
   refreshToken() {
-
+    return this.makePostRequest("/update/token").then((xmlhttp) => {
+      this.token = xmlhttp.response
+    }, (xmlhttp) => {
+      if (xmlhttp.status >= 401) {
+        this.token = ""
+      }
+    })
   }
 
-  login() {
-    return this.makePostRequest("/login").then((xmlhttp) => {
-      console.log("success: " + xmlhttp.responseText)
-      this.updateToken(xmlhttp.responseText)
-    }, (xmlhttp) => {
-      console.log("failure: " + xmlhttp.status)
-    })
+  parseLoginToken() {
+    let tok = this.getQueryVariable(TOKEN_KEY) 
+    if (tok) {
+      this.token = tok
+    }
+  }
+
+	getQueryVariable(variable) {
+    let query = window.location.search.substring(1);
+    let vars = query.split('&');
+    for (let i = 0; i < vars.length; i++) {
+        let pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) === variable) {
+            return decodeURIComponent(pair[1]);
+        }
+    }
   }
   makePostRequest(path, paramsObj) {
     return new Promise((resolve, reject) => {
@@ -55,9 +73,8 @@ class Watcher {
       xmlhttp.open("POST", path)
       xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
       xmlhttp.setRequestHeader("Access-Control-Allow-Origin", "*")
-      //xmlhttp.setRequestHeader(TOKEN_KEY, this.token.value)
-      //xmlhttp.send(params)
-      //xmlhttp.send()
+      xmlhttp.setRequestHeader(TOKEN_KEY, this.token.value)
+      xmlhttp.send(params)
     })
   }
 }
