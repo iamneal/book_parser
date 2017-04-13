@@ -7,15 +7,29 @@ class App extends Component {
   constructor() {
     super()
     this.bindAll()
-    this.state = { watcher: new Watcher() }
+    this.state = {
+      watcher: new Watcher(),
+      currentDebugInfo: ""
+    }
   }
 
   login(e) {
     window.location = "/login"
   }
+  
+  debugReq(e) {
+    this.state.watcher.makePostRequest("/api/debug").then((xmlhttp) => {
+      this.state.currentDebugInfo = xmlhttp.response
+      this.setState(this.state)
+    }, (xmlhttp) => {
+      this.state.currentDebugInfo = "request failed status: " + xmlhttp.status
+      this.setState(this.state)
+    })
+  }
 
   bindAll() {
     this.login = this.login.bind(this)
+    this.debugReq = this.debugReq.bind(this)
   }
 
   render() {
@@ -34,8 +48,17 @@ class App extends Component {
             </button>
           </div>
         ) : (
-          <div> Nothing </div>
+          <div>
+            <h2> /api/debug </h2>
+            <button onClick = {this.debugReq}>
+              Debug?
+            </button>
+          </div>
         )}
+        <div>
+          <h3> Debug Div </h3>
+          <div> {this.state.currentDebugInfo} </div>
+        </div>
       </div>
     );
   }
