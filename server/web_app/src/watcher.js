@@ -1,3 +1,4 @@
+import Promise from "bluebird";
 
 // TODO all globals should be put in a file that both go and js can read
 let TOKEN_KEY = "GRPC-Metadata-book_parser_token"
