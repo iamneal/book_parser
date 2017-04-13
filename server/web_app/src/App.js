@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { Watcher } from "./watcher.js"; 
+import Promise from "bluebird";
 
 class App extends Component {
   constructor() {
@@ -27,9 +28,18 @@ class App extends Component {
     })
   }
 
+  listBooks(e) {
+    this.state.watcher.makePostRequest("/api/book/list").then((xmlhttp) => {
+      this.state.currentDebugInfo = xmlhttp.response
+    }).catch((xmlhttp) => {
+      this.state.currentDebugInfo = "request failed status: " + xmlhttp.status
+    }).finally(() => this.setState(this.state))
+  }
+
   bindAll() {
     this.login = this.login.bind(this)
     this.debugReq = this.debugReq.bind(this)
+    this.listBooks = this.listBooks.bind(this)
   }
 
   render() {
@@ -49,9 +59,11 @@ class App extends Component {
           </div>
         ) : (
           <div>
-            <h2> /api/debug </h2>
-            <button onClick = {this.debugReq}>
-              Debug?
+            <button onClick={this.debugReq}>
+              /api/debug
+            </button>
+            <button onClick={this.listBooks}>
+              /api/book/list
             </button>
           </div>
         )}
