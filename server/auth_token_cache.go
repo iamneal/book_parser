@@ -55,7 +55,7 @@ type UserCache struct {
 }
 
 func (uc *UserCache) String() string {
-	return fmt.Sprintf("UserCache:\n\t\tToken: %#v\n\t\tUser: %#v",uc.Token, uc.User)
+	return fmt.Sprintf("UserCache:\n\t\tUser: %#v", uc.User)
 }
 
 func NewUserFromBytes(bytes []byte) (*User, error) {
