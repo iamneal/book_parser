@@ -50,10 +50,10 @@ func (s *Server) getTokenFromCtx(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("no token found on metadata")
 }
 
-func (s *Server) DebugPrintCache(ctx context.Context, em *pb.Empty) (*pb.Empty, error) {
+func (s *Server) DebugPrintCache(ctx context.Context, em *pb.Empty) (*pb.DebugMsg, error) {
 	fmt.Println("Debug Print")
-	fmt.Printf("cache: %#v", s.Cache)
-	return &pb.Empty{}, nil
+	fmt.Printf("cache: %s", s.Cache)
+	return &pb.DebugMsg{Msg: fmt.Sprintf("%s", s.Cache)}, nil
 }
 
 func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.Empty, error) {
