@@ -54,9 +54,8 @@ type UserCache struct {
 	Drive *drive.Service
 }
 
-type OAuth2TokenCache struct {
-	Tokens map[string] *UserCache
-	Config *oauth2.Config
+func (uc *UserCache) String() string {
+	return fmt.Sprintf("UserCache:\n\t\tToken: %#v\n\t\tUser: %#v",uc.Token, uc.User)
 }
 
 func NewUserFromBytes(bytes []byte) (*User, error) {
@@ -67,6 +66,19 @@ func NewUserFromBytes(bytes []byte) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+type OAuth2TokenCache struct {
+	Tokens map[string] *UserCache
+	Config *oauth2.Config
+}
+
+func (oa *OAuth2TokenCache) String() string {
+	pr := "OAuth2TokenCache\n\tTokens:\n\t"
+	for k, v := range oa.Tokens {
+		pr += fmt.Sprintf("%s: %s\n", k, v)
+	}
+	return pr
 }
 
 func NewOAuth2TokenCache() (*OAuth2TokenCache, error) {
