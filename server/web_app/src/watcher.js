@@ -46,13 +46,19 @@ class Watcher {
         }
     }
   }
-  makePostRequest(path, paramsObj) {
+  makePostRequest(path, paramsObj, recursed) {
     return new Promise((resolve, reject) => {
       let xmlhttp = new XMLHttpRequest()
       xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState === XMLHttpRequest.DONE) {
           if (xmlhttp.status === 200) {//StatusOK
             resolve(xmlhttp) 
+          } else if (xmlhttp.status === 401 && recursed !== false) {//Unauthorized
+            console.log("refreshing token, then retrying request")
+            this.refreshToken()
+              .then(() => this.makePostRequest(path, paramsObj, true))
+              .then((xmlhttp) => resolve(xmlhttp))
+              .catch((xmlhttp) => reject(xmlhttp))
           } else {
             reject(xmlhttp)
           }
