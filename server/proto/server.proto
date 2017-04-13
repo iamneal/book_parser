@@ -12,6 +12,9 @@ message File {
   string token = 1;
   string filename = 2;
 }
+message DebugMsg {
+  string msg = 1;
+}
 
 service BookParser {
   rpc PullBook(File) returns(Empty){
@@ -19,7 +22,7 @@ service BookParser {
       get: "/api/pull/book"
     };
   };
-  rpc DebugPrintCache(Empty) returns(Empty){
+  rpc DebugPrintCache(Empty) returns(DebugMsg){
     option(google.api.http) = {
       get: "/api/debug"
     };
