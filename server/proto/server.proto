@@ -12,14 +12,24 @@ message File {
   string token = 1;
   string filename = 2;
 }
+message Token {
+  string token = 1;
+}
 message DebugMsg {
   string msg = 1;
 }
+message Book {
+  string Name = 1;
+  string Id = 2;
+}
+message BookList {
+  repeated Book books = 1;
+}
 
 service BookParser {
-  rpc PullBook(File) returns(Empty){
+  rpc ListBooks(Token) returns(BookList){
     option(google.api.http) = {
-      get: "/api/pull/book"
+      get: "/api/book/list"
     };
   };
   rpc DebugPrintCache(Empty) returns(DebugMsg){
