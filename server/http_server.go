@@ -81,7 +81,7 @@ func (mhs *MyHttpServer) CreateTokenCookie(tok *oauth2.Token) (*http.Cookie, err
 	encoded := base64.StdEncoding.EncodeToString(valBytes)
 
 	return &http.Cookie{
-		Name: COOKIE_NAME,
+		Name: TOKEN_KEY,
 		Path: "/",
 		Domain: "localhost",
 		Value: encoded,
@@ -125,7 +125,7 @@ func (mhs *MyHttpServer) HandleAuth(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 	http.SetCookie(res, cookie)
-	http.Redirect(res, req, fmt.Sprintf("/?%s=%s",COOKIE_NAME, cookie.Raw), http.StatusFound)
+	http.Redirect(res, req, fmt.Sprintf("/?%s=%s",TOKEN_KEY, tok.AccessToken), http.StatusFound)
 }
 
 func (mhs *MyHttpServer) HandleLogin(res http.ResponseWriter, req *http.Request) {
