@@ -154,6 +154,7 @@ func (t *OAuth2TokenCache) NewToken(ctx context.Context, code string) (*oauth2.T
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("PUTTING into cache: %s", tok.AccessToken)
 	t.Tokens[tok.AccessToken] = &UserCache {
 		Token: tok,
 		User: user,
