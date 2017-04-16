@@ -8,6 +8,7 @@ import (
 	"net"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/codes"
 )
 
 type Server struct {
@@ -34,8 +35,11 @@ func (s *Server) getTokenFromCtx(ctx context.Context) (string, error) {
 	var token string
 
 	if ok {
-		fmt.Printf("metadata on the request: %+v\n", metadata)
-		tokenArr := metadata[COOKIE_NAME]
+		tokenArr := metadata[GRPC_GATEWAY_TOKEN]
+		//fmt.Println("printing out keys on the metadata")
+		//for key := range metadata {
+		//	fmt.Printf("%s\n", key)
+		//}
 		if len(tokenArr) == 1 {
 			token = tokenArr[0]
 			if token != "" {
@@ -62,7 +66,7 @@ func (s *Server) ListBooks(ctx context.Context, file *pb.Token) (*pb.BookList, e
 		tok, err := s.getTokenFromCtx(ctx)
 		if err != nil {
 			fmt.Printf("error when getting token from context %s", err)
-			return nil, err
+			return nil, grpc.Errorf(codes.Unauthenticated, err.Error())
 		}
 		tokenStr = tok
 	}
@@ -70,7 +74,7 @@ func (s *Server) ListBooks(ctx context.Context, file *pb.Token) (*pb.BookList, e
 	userCache, err := s.Cache.Get(tokenStr)
 	if err != nil {
 		fmt.Printf("error when grabbing from cache: %s", err)
-		return nil, err
+		return nil, grpc.Errorf(codes.Unauthenticated, err.Error())
 	}
 	fs := drive.NewFilesService(userCache.Drive)
 	list, err := fs.List().Corpora("user").Context(context.Background()).
