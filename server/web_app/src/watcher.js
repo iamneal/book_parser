@@ -1,7 +1,5 @@
 import Promise from "bluebird";
-
-// TODO all globals should be put in a file that both go and js can read
-let TOKEN_KEY = "GRPC-Metadata-book_parser_token"
+import {TOKEN_KEY} from "../../globals";
 
 class Watcher {
   constructor() {
@@ -50,7 +48,7 @@ class Watcher {
   makePostRequest(path, paramsObj, recursed) {
     return new Promise((resolve, reject) => {
       let xmlhttp = new XMLHttpRequest()
-      xmlhttp.onreadystatechange = function() {
+      xmlhttp.onreadystatechange = () => {
         if (xmlhttp.readyState === XMLHttpRequest.DONE) {
           if (xmlhttp.status === 200) {//StatusOK
             resolve(xmlhttp) 
@@ -80,7 +78,7 @@ class Watcher {
       xmlhttp.open("POST", path)
       xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
       xmlhttp.setRequestHeader("Access-Control-Allow-Origin", "*")
-      xmlhttp.setRequestHeader(TOKEN_KEY, this.token.value)
+      xmlhttp.setRequestHeader(TOKEN_KEY, this.token)
       xmlhttp.send(params)
     })
   }
