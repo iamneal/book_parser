@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import { Watcher } from "./watcher.js"; 
+import { Watcher } from "./watcher.js";
 import Promise from "bluebird";
 import {DocList} from "./BookList"
 import "semantic-ui-css/semantic.min.css"
@@ -20,7 +20,7 @@ class App extends Component {
   login(e) {
     window.location = "/login"
   }
-  
+
   debugReq(e) {
     this.state.watcher.makePostRequest("/api/debug").then((xmlhttp) => {
       this.state.currentDebugInfo = xmlhttp.response
@@ -35,6 +35,7 @@ class App extends Component {
     this.state.watcher.makePostRequest("/api/book/list").then((xmlhttp) => {
       try {
         let docs = JSON.parse(xmlhttp.response)
+        console.log(docs)
         this.state.docs = docs.books
       } catch(e) {
         this.state.currenDebugInfo = "failed to parse json: " + e

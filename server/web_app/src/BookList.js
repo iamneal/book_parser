@@ -8,7 +8,7 @@ class DocList extends Component {
     this.state = {selectedDoc: NaN}
     this.bindAll()
   }
-  
+
   bindAll() {
     this.pullDoc = this.pullDoc.bind(this)
     this.selectDoc = this.selectDoc.bind(this)
@@ -16,15 +16,18 @@ class DocList extends Component {
   }
 
   pullDoc(index) {
+    console.log('pull')
     this.props.pullDoc(this.props.docs[index].id)
   }
 
   selectDoc(index) {
+    console.log("select ", index)
     this.state.selectedDoc = index
     this.setState(this.state)
   }
 
   deselectDoc(index) {
+    console.log("deselect ", index)
     this.state.selectedDoc = NaN
     this.setState(this.state)
   }
@@ -32,21 +35,19 @@ class DocList extends Component {
   render() {
     let docNodes = this.props.docs.map((doc, index) => {
       return (<Doc
-        id={doc.id}
-        name={doc.name}
+        id={doc.Id}
+        name={doc.Name}
         index={index}
         select={this.selectDoc}
-        deselect={this.deselectDoc}
         pull={this.pullDoc}
+        deselect={this.deselectDoc}
         highlighted={this.state.selectedDoc === index}
+        key={index}
       />)
     })
     return (
-      <div>
-        <h3> Book list </h3>
-        <div className="BookList">
+      <div className="ui one column stackable grid container">
           {docNodes}
-        </div>
       </div>
     )
   }
@@ -59,35 +60,39 @@ DocList.propTypes = {
 
 class Doc extends Component {
   constructor() {
-    super() 
+    super()
   }
 
   render() {
     return (
-      <div>
+      <div className="column">
       {(this.props.highlighted) ? (
-        <div className="ExpandedBook" onClick={this.props.deselect(this.props.index)}>
-          <div className="ExpandedBook-Header">
+        <div className="ui raised segmant" onClick={() => this.props.deselect(this.props.index)}>
+          <div className="two wide column">
+          <div className="ui segment">
             <p> {this.props.name} </p>
           </div>
-          <div className="ExpandedBook-Body">
+          <div className="column">
+          <div className="ui segment">
             <div>
               <div> id: {this.props.id}</div>
               <div> pull status: (not used yet) </div>
             </div>
             <div>
-              <div> 
+              <div>
                 <button onClick={() => console.log("called pull")}>
                   pull book
                 </button>
               </div>
             </div>
+            </div>
+          </div>
           </div>
         </div>
 
       ) : (
-        <div className="UnexpandedBook" onClick={this.props.select(this.props.index)}>
-          {this.props.name} 
+        <div className="ui raised segment" onClick={() => this.props.select(this.props.index)}>
+          {this.props.name}
         </div>
       )}
     </div>
