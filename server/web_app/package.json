@@ -4,8 +4,10 @@
   "private": true,
   "dependencies": {
     "bluebird": "^3.5.0",
+    "prop-types": "^15.5.8",
     "react": "^15.4.2",
-    "react-dom": "^15.4.2"
+    "react-dom": "^15.4.2",
+    "semantic-ui-css": "^2.2.10"
   },
   "devDependencies": {
     "react-scripts": "0.9.5"
