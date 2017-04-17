@@ -1,8 +1,10 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from "react";
+import logo from "./logo.svg";
+import "./App.css";
 import { Watcher } from "./watcher.js"; 
 import Promise from "bluebird";
+import {DocList} from "./BookList"
+import "semantic-ui-css/semantic.min.css"
 
 class App extends Component {
   constructor() {
@@ -10,7 +12,8 @@ class App extends Component {
     this.bindAll()
     this.state = {
       watcher: new Watcher(),
-      currentDebugInfo: ""
+      currentDebugInfo: "",
+      docs: []
     }
   }
 
@@ -30,10 +33,20 @@ class App extends Component {
 
   listBooks(e) {
     this.state.watcher.makePostRequest("/api/book/list").then((xmlhttp) => {
-      this.state.currentDebugInfo = xmlhttp.response
+      try {
+        let docs = JSON.parse(xmlhttp.response)
+        this.state.docs = docs.books
+      } catch(e) {
+        this.state.currenDebugInfo = "failed to parse json: " + e
+        console.log(e)
+      }
     }).catch((xmlhttp) => {
       this.state.currentDebugInfo = "request failed status: " + xmlhttp.status
     }).finally(() => this.setState(this.state))
+  }
+
+  pullDoc() {
+    console.log("pull doc called")
   }
 
   bindAll() {
@@ -67,9 +80,15 @@ class App extends Component {
             </button>
           </div>
         )}
-        <div>
-          <h3> Debug Div </h3>
-          <div> {this.state.currentDebugInfo} </div>
+        <div className="ui two column stackable grid container">
+          <div className="column">
+            <h3> Debug Div </h3>
+            <div> {this.state.currentDebugInfo} </div>
+          </div>
+          <div className="column">
+            <h3> Doc list </h3>
+            <DocList pullDoc={this.pullDoc} docs={this.state.docs}/>
+          </div>
         </div>
       </div>
     );
