@@ -15,7 +15,9 @@ class DocList extends Component {
     this.deselectDoc = this.deselectDoc.bind(this)
   }
 
-  pullDoc(index) {
+  pullDoc(event, index) {
+    event.preventDefault()
+    event.stopPropagation()
     console.log('pull')
     this.props.pullDoc(this.props.docs[index].id)
   }
@@ -80,7 +82,7 @@ class Doc extends Component {
             </div>
             <div>
               <div>
-                <button onClick={() => console.log("called pull")}>
+                <button onClick={(e) => this.props.pull(e, this.props.index)}>
                   pull book
                 </button>
               </div>
