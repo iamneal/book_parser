@@ -15,6 +15,10 @@ type Server struct {
 	Cache *OAuth2TokenCache
 }
 
+type MsgWithToken interface{
+	Token string
+}
+
 func NewRpcDriveServer(cache *OAuth2TokenCache) (*Server) {
 	return &Server{Cache: cache}
 }
@@ -30,28 +34,6 @@ func (s *Server) RunRpcServer(conn string) error {
 	return server.Serve(listener)
 }
 
-func (s *Server) getTokenFromCtx(ctx context.Context) (string, error) {
-	metadata, ok := metadata.FromContext(ctx)
-	var token string
-
-	if ok {
-		tokenArr := metadata[GRPC_GATEWAY_TOKEN]
-		//fmt.Println("printing out keys on the metadata")
-		//for key := range metadata {
-		//	fmt.Printf("%s\n", key)
-		//}
-		if len(tokenArr) == 1 {
-			token = tokenArr[0]
-			if token != "" {
-				return token, nil
-			}
-		} else if len(tokenArr) > 1 {
-			return "", fmt.Errorf("token array? %+v", tokenArr)
-		}
-	}
-	return "", fmt.Errorf("no token found on metadata")
-}
-
 func (s *Server) DebugPrintCache(ctx context.Context, em *pb.Empty) (*pb.DebugMsg, error) {
 	fmt.Println("Debug Print")
 	fmt.Printf("cache: %s", s.Cache)
@@ -59,22 +41,9 @@ func (s *Server) DebugPrintCache(ctx context.Context, em *pb.Empty) (*pb.DebugMs
 }
 
 func (s *Server) ListBooks(ctx context.Context, file *pb.Token) (*pb.BookList, error) {
-	fmt.Printf("rpc Server recieved: %+v", file)
-	tokenStr := file.Token
-
-	if tokenStr == "" {
-		tok, err := s.getTokenFromCtx(ctx)
-		if err != nil {
-			fmt.Printf("error when getting token from context %s", err)
-			return nil, grpc.Errorf(codes.Unauthenticated, err.Error())
-		}
-		tokenStr = tok
-	}
-	fmt.Printf("got token: %#v", tokenStr)
-	userCache, err := s.Cache.Get(tokenStr)
+	userCache, err := s.getUserCache(ctx, file)
 	if err != nil {
-		fmt.Printf("error when grabbing from cache: %s", err)
-		return nil, grpc.Errorf(codes.Unauthenticated, err.Error())
+		return nil, err
 	}
 	fs := drive.NewFilesService(userCache.Drive)
 	list, err := fs.List().Corpora("user").Context(context.Background()).
@@ -91,4 +60,59 @@ func (s *Server) ListBooks(ctx context.Context, file *pb.Token) (*pb.BookList, e
 		books = append(books, &pb.Book{Id: f.Id, Name: f.Name})
 	}
 	return &pb.BookList{Books: books}, nil
+}
+
+func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, error) {
+	fmt.Printf("Pull book recieved: %#v\n", file)
+	if file.Id == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "no file id found")
+	}
+	userCache, err := s.getUserCache(ctx, file)
+	if err != nil {
+		return nil, err
+	}
+	filename := userCache.User.Id + file.Id)
+
+	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
+
+	return &pb.DebugMsg{ Msg: "got file name: %s", filename}, nil
+
+}
+
+func (s *Server) getToken(ctx context.Context, msg MsgWithToken) (string, error) {
+	token := msg.Token
+	if token != "" {
+		return token, nil
+	}
+	metadata, ok := metadata.FromContext(ctx)
+
+	if ok {
+		tokenArr := metadata[GRPC_GATEWAY_TOKEN]
+		//fmt.Println("printing out keys on the metadata")
+		//for key := range metadata {
+		//	fmt.Printf("%s\n", key)
+		//}
+		if len(tokenArr) == 1 {
+			token = tokenArr[0]
+			if token != "" {
+				return token, nil
+			}
+		} else if len(tokenArr) > 1 {
+			return "", fmt.Errorf("token array? %+v", tokenArr)
+		}
+	}
+	fmt.Printf("could not find token on ctx")
+	return "", grpc.Errorf(codes.Unauthenticated, "no token found on metadata")
+}
+
+func (s *Server) getUserCache(ctx context.Context, msg MsgWithToken) (*UserCache, error)(
+	token, err := s.getToken(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+	c, err := s.Cache.Get(token)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, err.Error())
+	}
+	return c, nil
 }
