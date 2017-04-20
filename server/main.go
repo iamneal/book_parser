@@ -15,8 +15,8 @@ type Server struct {
 	Cache *OAuth2TokenCache
 }
 
-type MsgWithToken interface{
-	Token string
+type MsgWithToken interface {
+	GetToken() string
 }
 
 func NewRpcDriveServer(cache *OAuth2TokenCache) (*Server) {
@@ -74,7 +74,6 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	if userCache.User == nil {
 		return nil, grpc.Errorf(codes.Unauthenticated, "unable to determin user")
 	}
-
 	filename := userCache.User.Id + file.Id
 
 	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
@@ -84,7 +83,7 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 }
 
 func (s *Server) getToken(ctx context.Context, msg MsgWithToken) (string, error) {
-	token := msg.Token
+	token := msg.GetToken()
 	if token != "" {
 		return token, nil
 	}
@@ -109,7 +108,7 @@ func (s *Server) getToken(ctx context.Context, msg MsgWithToken) (string, error)
 	return "", grpc.Errorf(codes.Unauthenticated, "no token found on metadata")
 }
 
-func (s *Server) getUserCache(ctx context.Context, msg MsgWithToken) (*UserCache, error)(
+func (s *Server) getUserCache(ctx context.Context, msg MsgWithToken) (*UserCache, error) {
 	token, err := s.getToken(ctx, msg)
 	if err != nil {
 		return nil, err
