@@ -46,8 +46,13 @@ class App extends Component {
     }).finally(() => this.setState(this.state))
   }
 
-  pullDoc() {
-    console.log("pull doc called")
+  pullDoc(id) {
+    this.state.watcher.makePostRequest("/api/book/pull", {id}).then((xmlhttp) => {
+      console.log("success! ", xmlhttp.response)
+      this.state.currentDebugInfo = xmlhttp.response
+    }, (xmlhttp) => {
+      this.state.currentDebugInfo = "request failed status: ", xmlhttp.status
+    }).finally(() => this.setState(this.state))
   }
 
   bindAll() {
