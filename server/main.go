@@ -71,7 +71,11 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	if err != nil {
 		return nil, err
 	}
-	filename := userCache.User.Id + file.Id)
+	if userCache.User == nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "unable to determin user")
+	}
+
+	filename := userCache.User.Id + file.Id
 
 	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
 
