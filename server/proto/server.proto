@@ -10,7 +10,7 @@ message IntValue {
 }
 message File {
   string token = 1;
-  string filename = 2;
+  string id = 2;
 }
 message Token {
   string token = 1;
@@ -32,6 +32,12 @@ service BookParser {
       get: "/api/book/list"
     };
   };
+	rpc PullBook(File) returns(DebugMsg){
+		option(google.api.http) = {
+			post: "/api/book/pull"
+			body: "*"
+		};
+	};
   rpc DebugPrintCache(Empty) returns(DebugMsg){
     option(google.api.http) = {
       get: "/api/debug"
