@@ -78,7 +78,7 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 
 	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
 
-	return &pb.DebugMsg{ Msg: "got file name: %s", filename}, nil
+	return &pb.DebugMsg{ Msg: filename}, nil
 
 }
 
