@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import { Watcher } from "./watcher.js";
+import  watcher from "./watcher.js";
 import Promise from "bluebird";
 import {DocList} from "./BookList"
 import "semantic-ui-css/semantic.min.css"
@@ -10,8 +10,16 @@ class App extends Component {
   constructor() {
     super()
     this.bindAll()
+    watcher.parseLoginToken()
+    watcher.registerListener("/api/book/pull", (xmlhttp) => {
+      if (xmlhttp.status === 200) {
+        this.state.currentDebugInfo = "api/book/pull: " + xmlhttp.response
+      } else {
+        this.state.currentDebugInfo = "api/book/pull failed" + xmlhttp.status
+      }
+      this.setState(this.state)
+    })
     this.state = {
-      watcher: new Watcher(),
       currentDebugInfo: "",
       docs: []
     }
@@ -22,7 +30,7 @@ class App extends Component {
   }
 
   debugReq(e) {
-    this.state.watcher.makePostRequest("/api/debug").then((xmlhttp) => {
+    watcher.makePostRequest("/api/debug").then((xmlhttp) => {
       this.state.currentDebugInfo = xmlhttp.response
       this.setState(this.state)
     }, (xmlhttp) => {
@@ -32,7 +40,7 @@ class App extends Component {
   }
 
   listBooks(e) {
-    this.state.watcher.makePostRequest("/api/book/list").then((xmlhttp) => {
+    watcher.makePostRequest("/api/book/list").then((xmlhttp) => {
       try {
         let docs = JSON.parse(xmlhttp.response)
         console.log(docs)
@@ -46,20 +54,10 @@ class App extends Component {
     }).finally(() => this.setState(this.state))
   }
 
-  pullDoc(id) {
-    this.state.watcher.makePostRequest("/api/book/pull", {id}).then((xmlhttp) => {
-      console.log("success! ", xmlhttp.response)
-      this.state.currentDebugInfo = xmlhttp.response
-    }, (xmlhttp) => {
-      this.state.currentDebugInfo = "request failed status: ", xmlhttp.status
-    }).finally(() => this.setState(this.state))
-  }
-
   bindAll() {
     this.login = this.login.bind(this)
     this.debugReq = this.debugReq.bind(this)
     this.listBooks = this.listBooks.bind(this)
-    this.pullDoc = this.pullDoc.bind(this)
   }
 
   render() {
@@ -71,7 +69,7 @@ class App extends Component {
         <p className="App-intro">
           To get started, edit <code>src/App.js</code> and save to reload.
         </p>
-        {(this.state.watcher.token === "") ? (
+        {(watcher.token === "") ? (
           <div>
             <button onClick={this.login}>
               Login
@@ -94,7 +92,7 @@ class App extends Component {
           </div>
           <div className="column">
             <h3> Doc list </h3>
-            <DocList pullDoc={this.pullDoc} docs={this.state.docs}/>
+            <DocList docs={this.state.docs}/>
           </div>
         </div>
       </div>
