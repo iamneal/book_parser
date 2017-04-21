@@ -18,8 +18,7 @@ class DocList extends Component {
   pullDoc(event, index) {
     event.preventDefault()
     event.stopPropagation()
-    console.log('pull')
-    this.props.pullDoc(this.props.docs[index].id)
+    this.props.pullDoc(this.props.docs[index].Id)
   }
 
   selectDoc(index) {
