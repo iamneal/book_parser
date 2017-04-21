@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import Promise from "bluebird";
+import watcher from "./watcher.js"
 
 class DocList extends Component {
   constructor() {
@@ -16,9 +17,15 @@ class DocList extends Component {
   }
 
   pullDoc(event, index) {
+    console.log("does doc watcher have token? ", watcher.token)
     event.preventDefault()
     event.stopPropagation()
-    this.props.pullDoc(this.props.docs[index].Id)
+    let id = this.props.docs[index].Id
+    watcher.makePostRequest("/api/book/pull", {id}).then((xmlhttp) => {
+      console.log("success! ", xmlhttp.response)
+    }, (xmlhttp) => {
+      console.log("failure")
+    })
   }
 
   selectDoc(index) {
@@ -55,7 +62,6 @@ class DocList extends Component {
 }
 
 DocList.propTypes = {
-  pullDoc: PropTypes.func.isRequired,
   docs: PropTypes.array
 }
 
