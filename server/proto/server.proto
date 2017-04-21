@@ -29,18 +29,18 @@ message BookList {
 service BookParser {
   rpc ListBooks(Token) returns(BookList){
     option(google.api.http) = {
-      get: "/api/book/list"
+      post: "/api/book/list"
     };
   };
 	rpc PullBook(File) returns(DebugMsg){
 		option(google.api.http) = {
 			post: "/api/book/pull"
-			body: "*"
+      body: "*"
 		};
 	};
   rpc DebugPrintCache(Empty) returns(DebugMsg){
     option(google.api.http) = {
-      get: "/api/debug"
+      post: "/api/debug"
     };
   };
 }
