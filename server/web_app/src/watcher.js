@@ -4,13 +4,22 @@ import {TOKEN_KEY} from "../../globals";
 class Watcher {
   constructor() {
     this.token = ""
-    console.log("looking for tokens in query string")
-    this.parseLoginToken()
+    this.listeners = {}
+  }
+  setToken(tok) {
+    this.token = ""
     console.log("token now: ", this.token)
   }
 
   getTokenFromCookie() {
 
+  }
+  // will give all listeners the successful/failing xmlhttp request
+  registerListener(key, func) {
+    if (!this.listeners[key]) {
+      this.listeners[key] = []
+    }
+    this.listeners[key].push(func)
   }
 
   updateLocalToken(tokenStr) {
@@ -51,6 +60,12 @@ class Watcher {
       let xmlhttp = new XMLHttpRequest()
       xmlhttp.onreadystatechange = () => {
         if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+          // call all our listeners with the response, and the path
+          let listeners = this.listeners[path]
+          if (listeners) {
+            listeners.map((f) => f(xmlhttp, path))
+          }
+          // give our response back to who called us
           if (xmlhttp.status === 200) {//StatusOK
             resolve(xmlhttp)
           } else if (xmlhttp.status === 401 && recursed !== true) {//Unauthorized
@@ -91,4 +106,4 @@ class Watcher {
   }
 }
 
-module.exports.Watcher = Watcher
+module.exports = new Watcher()
