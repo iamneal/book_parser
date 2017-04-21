@@ -19,7 +19,7 @@ class Watcher {
   }
 
   refreshToken() {
-    return this.makePostRequest("/update/token").then((xmlhttp) => {
+    return this.makePostRequest("/update/token", null, true).then((xmlhttp) => {
       this.token = xmlhttp.response
     }, (xmlhttp) => {
       if (xmlhttp.status >= 401) {
@@ -29,7 +29,7 @@ class Watcher {
   }
 
   parseLoginToken() {
-    let tok = this.getQueryVariable(TOKEN_KEY) 
+    let tok = this.getQueryVariable(TOKEN_KEY)
     if (tok) {
       this.token = tok
     }
@@ -46,14 +46,15 @@ class Watcher {
     }
   }
   makePostRequest(path, paramsObj, recursed) {
+    console.log("PARAMSS OBJ: ", JSON.stringify(paramsObj, null, 2))
     return new Promise((resolve, reject) => {
       let xmlhttp = new XMLHttpRequest()
       xmlhttp.onreadystatechange = () => {
         if (xmlhttp.readyState === XMLHttpRequest.DONE) {
           if (xmlhttp.status === 200) {//StatusOK
-            resolve(xmlhttp) 
-          } else if (xmlhttp.status === 401 && recursed !== false) {//Unauthorized
-            console.log("refreshing token, then retrying request")
+            resolve(xmlhttp)
+          } else if (xmlhttp.status === 401 && recursed !== true) {//Unauthorized
+            console.log("refreshing token, then retrying request: status, recursed ", xmlhttp.status, recursed)
             this.refreshToken()
               .then(() => this.makePostRequest(path, paramsObj, true))
               .then((xmlhttp) => resolve(xmlhttp))
@@ -67,8 +68,12 @@ class Watcher {
       if (paramsObj) {
         // add the token to our request if it exists
         if (this.token) {
-          paramsObj[TOKEN_KEY] = this.token.value
+          console.log("TOKEN_KEY, this.token.value ", TOKEN_KEY, this.token.value)
+          paramsObj[TOKEN_KEY] = this.token.value;
+          console.log("paramsObj now: ", paramsObj)
+
         }
+        console.log("paramsObj: ", paramsObj)
         // translate params to form string
         params = Object.keys(paramsObj).
           map((key) => key + "=" + paramsObj[key]).
@@ -79,6 +84,7 @@ class Watcher {
       xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
       xmlhttp.setRequestHeader("Access-Control-Allow-Origin", "*")
       xmlhttp.setRequestHeader(TOKEN_KEY, this.token)
+      console.log("params: ", params)
       xmlhttp.send(params)
     })
   }
