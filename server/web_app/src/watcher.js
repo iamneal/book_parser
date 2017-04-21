@@ -68,20 +68,21 @@ class Watcher {
       if (paramsObj) {
         // add the token to our request if it exists
         if (this.token) {
-          console.log("TOKEN_KEY, this.token.value ", TOKEN_KEY, this.token.value)
-          paramsObj[TOKEN_KEY] = this.token.value;
+          console.log("TOKEN_KEY, this.token", TOKEN_KEY, this.token)
+          paramsObj.token = this.token;
           console.log("paramsObj now: ", paramsObj)
 
         }
-        console.log("paramsObj: ", paramsObj)
+        params = JSON.stringify(paramsObj)
         // translate params to form string
-        params = Object.keys(paramsObj).
-          map((key) => key + "=" + paramsObj[key]).
-          join("&").
-          replace(/%20/g, "+")
+        //params = Object.keys(paramsObj).
+        //  map((key) => key + "=" + paramsObj[key]).
+        //  join("&").
+        //  replace(/%20/g, "+")
       }
       xmlhttp.open("POST", path)
-      xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      //xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       xmlhttp.setRequestHeader("Access-Control-Allow-Origin", "*")
       xmlhttp.setRequestHeader(TOKEN_KEY, this.token)
       console.log("params: ", params)
