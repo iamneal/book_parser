@@ -47,8 +47,7 @@ class App extends Component {
   }
 
   pullDoc(id) {
-    console.log("pulling book with: id, obj", id, {id: id})
-    this.state.watcher.makePostRequest("/api/book/pull", {id: id}).then((xmlhttp) => {
+    this.state.watcher.makePostRequest("/api/book/pull", {id}).then((xmlhttp) => {
       console.log("success! ", xmlhttp.response)
       this.state.currentDebugInfo = xmlhttp.response
     }, (xmlhttp) => {
