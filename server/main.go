@@ -4,8 +4,10 @@ import (
 	pb "github.com/iamneal/book_parser/server/proto"
 	drive "google.golang.org/api/drive/v3"
 	"golang.org/x/net/context"
+	"os"
 	"fmt"
 	"net"
+	"path"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/codes"
@@ -19,8 +21,14 @@ type MsgWithToken interface {
 	GetToken() string
 }
 
-func NewRpcDriveServer(cache *OAuth2TokenCache) (*Server) {
-	return &Server{Cache: cache}
+func NewRpcDriveServer(cache *OAuth2TokenCache) (*Server, error) {
+	if _, err := os.Stat(USER_FILE_SYSTEM); err != nil {
+		err = os.Mkdir(USER_FILE_SYSTEM, os.FileMode(0775))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &Server{Cache: cache}, nil
 }
 
 func (s *Server) RunRpcServer(conn string) error {
@@ -71,10 +79,19 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	if err != nil {
 		return nil, err
 	}
-	if userCache.User == nil {
+	if userCache.User == nil || userCache.User.Id == "" {
 		return nil, grpc.Errorf(codes.Unauthenticated, "unable to determin user")
 	}
-	filename := userCache.User.Id + file.Id
+	dir := path.Join(USER_FILE_SYSTEM, userCache.User.Id)
+	// check if the users directory exists
+	_, err = os.Stat(dir)
+	if err != nil {
+		err = os.Mkdir(dir, os.FileMode(0775))
+		if err != nil {
+			return nil, err
+		}
+	}
+	filename := path.Join(dir, file.Id)
 
 	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
 

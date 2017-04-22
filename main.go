@@ -9,7 +9,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	rpcServer := server.NewRpcDriveServer(cache)
+	rpcServer, err := server.NewRpcDriveServer(cache)
 	if err != nil {
 		panic(err)
 	}
