@@ -84,14 +84,17 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	}
 	dir := path.Join(USER_FILE_SYSTEM, userCache.User.Id)
 	// check if the users directory exists
-	_, err = os.Stat(dir)
-	if err != nil {
+	if _, err := os.Stat(dir); err != nil {
 		err = os.Mkdir(dir, os.FileMode(0775))
 		if err != nil {
 			return nil, err
 		}
 	}
 	filename := path.Join(dir, file.Id)
+	//if file exists recreate it
+	if _, err := os.Stat(filename); err != nil {
+
+	}
 
 	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
 
