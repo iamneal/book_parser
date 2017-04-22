@@ -11,6 +11,7 @@ var (
 	GRPC_GATEWAY_TOKEN string
 	HTML_LOCATION string
 	SECRET_LOCATION_NAME string
+	USER_FILE_SYSTEM string
 )
 
 type Globals struct{
@@ -18,6 +19,7 @@ type Globals struct{
 	GRPC_GATEWAY_TOKEN string
 	HTML_LOCATION string
 	SECRET_LOCATION_NAME string
+	USER_FILE_SYSTEM string
 }
 
 func init() {
@@ -36,4 +38,5 @@ func init() {
 	GRPC_GATEWAY_TOKEN  = globals.GRPC_GATEWAY_TOKEN
 	HTML_LOCATION = globals.HTML_LOCATION
 	SECRET_LOCATION_NAME = globals.SECRET_LOCATION_NAME
+	USER_FILE_SYSTEM = globals.USER_FILE_SYSTEM
 }

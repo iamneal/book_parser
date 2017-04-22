@@ -2,5 +2,6 @@
   "TOKEN_KEY": "Grpc-Metadata-book_parser_token",
   "GRPC_GATEWAY_TOKEN": "book_parser_token",
   "HTML_LOCATION": "./server/web_app/build/",
-  "SECRET_LOCATION_NAME": "SECRET_LOCATION"
+  "SECRET_LOCATION_NAME": "SECRET_LOCATION",
+  "USER_FILE_SYSTEM": "./server/user_files/"
 }
