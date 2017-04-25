@@ -5,6 +5,7 @@ import (
 	drive "google.golang.org/api/drive/v3"
 	"golang.org/x/net/context"
 	"os"
+	"io"
 	"fmt"
 	"net"
 	"path"
@@ -77,7 +78,8 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	}
 	userCache, err := s.getUserCache(ctx, file)
 	if err != nil {
-		return nil, err
+		errMsg := fmt.Sprintf("could not get user Cache: %s", err)
+		return nil, grpc.Errorf(codes.Unauthenticated, errMsg)
 	}
 	if userCache.User == nil || userCache.User.Id == "" {
 		return nil, grpc.Errorf(codes.Unauthenticated, "unable to determin user")
@@ -87,19 +89,37 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	if _, err := os.Stat(dir); err != nil {
 		err = os.Mkdir(dir, os.FileMode(0775))
 		if err != nil {
-			return nil, err
+			errMsg := fmt.Sprintf("could not create user directory: %s", err)
+			return nil, grpc.Errorf(codes.Aborted, errMsg)
 		}
 	}
 	filename := path.Join(dir, file.Id)
-	//if file exists recreate it
-	if _, err := os.Stat(filename); err != nil {
-
+	err = os.Remove(filename)
+	if err != nil && err != os.ErrNotExist {
+		errMsg := fmt.Sprintf("could not remove file: %s got error: %s", filename, err)
+		return nil, grpc.Errorf(codes.Aborted, errMsg)
 	}
-
-	//resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
-
-	return &pb.DebugMsg{ Msg: filename}, nil
-
+	f, err := os.Create(filename)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not create file: %s got error: %s", filename, err)
+		return nil, grpc.Errorf(codes.Aborted, errMsg)
+	}
+	resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
+	if err != nil {
+		errMsg := fmt.Sprintf("could not download file: %s", err)
+		return nil, grpc.Errorf(codes.Unauthenticated, errMsg)
+	}
+	defer resp.Body.Close()
+	num, err := io.Copy(f, resp.Body)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not copy file from httpResp: %s", err)
+		return nil, grpc.Errorf(codes.Aborted, errMsg)
+	}
+	if num == 0 {
+		fmt.Printf("WARNING: copied 0 bytes for file: %s", filename)
+	}
+	respMsg := fmt.Sprintf("got %d bytes for file: %s", num, filename)
+	return &pb.DebugMsg{ Msg: respMsg}, nil
 }
 
 func (s *Server) getToken(ctx context.Context, msg MsgWithToken) (string, error) {
