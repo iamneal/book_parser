@@ -4,6 +4,7 @@ import (
 	pb "github.com/iamneal/book_parser/server/proto"
 	drive "google.golang.org/api/drive/v3"
 	"golang.org/x/net/context"
+	"strings"
 	"os"
 	"io"
 	"fmt"
@@ -95,9 +96,9 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	}
 	filename := path.Join(dir, file.Id)
 	err = os.Remove(filename)
-	if err != nil && err != os.ErrNotExist {
-		errMsg := fmt.Sprintf("could not remove file: %s got error: %s", filename, err)
-		return nil, grpc.Errorf(codes.Aborted, errMsg)
+	if err != nil && !strings.Contains(err.Error(), os.ErrNotExist.Error()){
+			errMsg := fmt.Sprintf("could not remove file: %s got error: %s", filename, err)
+			return nil, grpc.Errorf(codes.Aborted, errMsg)
 	}
 	f, err := os.Create(filename)
 	if err != nil {
