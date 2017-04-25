@@ -15,7 +15,7 @@ class App extends Component {
       if (xmlhttp.status === 200) {
         this.state.currentDebugInfo = "api/book/pull: " + xmlhttp.response
       } else {
-        this.state.currentDebugInfo = "api/book/pull failed" + xmlhttp.status
+        this.state.currentDebugInfo = "api/book/pull failed" + xmlhttp.status + " " + xmlhttp.responseText
       }
       this.setState(this.state)
     })
