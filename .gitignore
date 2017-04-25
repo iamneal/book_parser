@@ -39,8 +39,9 @@ client_secret*.json
 
 # misc
 **/.DS_Store
-**/.env
+**/.senv
 **/npm-debug.log*
-**/yarn-debug.log*
+**/uyarn-debug.log*
 **/yarn-error.log*
+**/user_files
 
