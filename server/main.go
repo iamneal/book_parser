@@ -96,7 +96,7 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	}
 	filename := path.Join(dir, file.Id)
 	err = os.Remove(filename)
-	if err != nil && !strings.Contains(err.Error(), os.ErrNotExist.Error()){
+	if err != nil && !strings.Contains(err.Error(), "no such file or directory"){
 			errMsg := fmt.Sprintf("could not remove file: %s got error: %s", filename, err)
 			return nil, grpc.Errorf(codes.Aborted, errMsg)
 	}
