@@ -28,3 +28,8 @@ func main() {
 		panic(err)
 	}
 }
+func thing() string{
+	var ohello string
+	ohello = "what the"
+	return ohello
+}

@@ -1,18 +1,18 @@
-package server;
+package server
 
 import (
-	pb "github.com/iamneal/book_parser/server/proto"
-	drive "google.golang.org/api/drive/v3"
-	"golang.org/x/net/context"
-	"strings"
-	"os"
-	"io"
 	"fmt"
-	"net"
-	"path"
+	pb "github.com/iamneal/book_parser/server/proto"
+	"golang.org/x/net/context"
+	drive "google.golang.org/api/drive/v3"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"io"
+	"net"
+	"os"
+	"path"
+	"strings"
 )
 
 type Server struct {
@@ -66,7 +66,7 @@ func (s *Server) ListBooks(ctx context.Context, file *pb.Token) (*pb.BookList, e
 	books := make([]*pb.Book, 0)
 	fmt.Printf("listed files: %+v\n", list)
 	for _, f := range list.Files {
-		fmt.Printf("fileId: %s\n Name: %s\n\n" ,f.Id, f.Name)
+		fmt.Printf("fileId: %s\n Name: %s\n\n", f.Id, f.Name)
 		books = append(books, &pb.Book{Id: f.Id, Name: f.Name})
 	}
 	return &pb.BookList{Books: books}, nil
@@ -96,16 +96,16 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 	}
 	filename := path.Join(dir, file.Id)
 	err = os.Remove(filename)
-	if err != nil && !strings.Contains(err.Error(), "no such file or directory"){
-			errMsg := fmt.Sprintf("could not remove file: %s got error: %s", filename, err)
-			return nil, grpc.Errorf(codes.Aborted, errMsg)
+	if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+		errMsg := fmt.Sprintf("could not remove file: %s got error: %s", filename, err)
+		return nil, grpc.Errorf(codes.Aborted, errMsg)
 	}
 	f, err := os.Create(filename)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create file: %s got error: %s", filename, err)
 		return nil, grpc.Errorf(codes.Aborted, errMsg)
 	}
-	resp, err := drive.NewFilesService(userCache.Drive).Get(file.Id).Download()
+	resp, err := drive.NewFilesService(userCache.Drive).Export(file.Id, "text/plain").Download()
 	if err != nil {
 		errMsg := fmt.Sprintf("could not download file: %s", err)
 		return nil, grpc.Errorf(codes.Unauthenticated, errMsg)
@@ -120,7 +120,7 @@ func (s *Server) PullBook(ctx context.Context, file *pb.File) (*pb.DebugMsg, err
 		fmt.Printf("WARNING: copied 0 bytes for file: %s", filename)
 	}
 	respMsg := fmt.Sprintf("got %d bytes for file: %s", num, filename)
-	return &pb.DebugMsg{ Msg: respMsg}, nil
+	return &pb.DebugMsg{Msg: respMsg}, nil
 }
 
 func (s *Server) getToken(ctx context.Context, msg MsgWithToken) (string, error) {

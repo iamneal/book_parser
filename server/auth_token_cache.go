@@ -1,27 +1,27 @@
 package server
 
-import(
-	"os"
-	"fmt"
+import (
 	"context"
-	"time"
-	"errors"
 	"encoding/json"
-	"io/ioutil"
-	"path/filepath"
+	"errors"
+	"fmt"
 	"golang.org/x/oauth2"
-	"net/http"
-	drive "google.golang.org/api/drive/v3"
 	"golang.org/x/oauth2/google"
+	drive "google.golang.org/api/drive/v3"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 var BadCache = errors.New("the access token has expired")
 
 type UpdateToken struct {
-	Update func(*oauth2.Token, *oauth2.Token)
-	User *User
+	Update   func(*oauth2.Token, *oauth2.Token)
+	User     *User
 	CurToken *oauth2.Token
-	Parent oauth2.TokenSource
+	Parent   oauth2.TokenSource
 }
 
 func (ut *UpdateToken) Token() (*oauth2.Token, error) {
@@ -39,18 +39,16 @@ func (ut *UpdateToken) Token() (*oauth2.Token, error) {
 	return ut.CurToken, nil
 }
 
-
-
 type User struct {
-	Id string `json:"id,omitempty"`
+	Id        string `json:"id,omitempty"`
 	FirstName string `json:"given_name,omitempty"`
-	LastName string `json:"family_name,omitempty"`
+	LastName  string `json:"family_name,omitempty"`
 }
 
 type UserCache struct {
 	Token *oauth2.Token
-	User *User
-	Http *http.Client
+	User  *User
+	Http  *http.Client
 	Drive *drive.Service
 }
 
@@ -69,7 +67,7 @@ func NewUserFromBytes(bytes []byte) (*User, error) {
 }
 
 type OAuth2TokenCache struct {
-	Tokens map[string] *UserCache
+	Tokens map[string]*UserCache
 	Config *oauth2.Config
 }
 
@@ -93,7 +91,7 @@ func NewOAuth2TokenCache() (*OAuth2TokenCache, error) {
 	}, nil
 }
 
-func (t *OAuth2TokenCache) Get(tok string) (*UserCache, error ) {
+func (t *OAuth2TokenCache) Get(tok string) (*UserCache, error) {
 	cache := t.Tokens[tok]
 	if cache == nil {
 		return nil, BadCache
@@ -124,7 +122,7 @@ func (t *OAuth2TokenCache) NewToken(ctx context.Context, code string) (*oauth2.T
 		return nil, err
 	}
 	tknSrc := &UpdateToken{
-		Parent: oauth2.ReuseTokenSource(tok, nil),
+		Parent:   oauth2.ReuseTokenSource(tok, nil),
 		CurToken: tok,
 		Update: func(oldt, newt *oauth2.Token) {
 			if cache, exists := t.Tokens[oldt.AccessToken]; exists && cache != nil {
@@ -155,10 +153,10 @@ func (t *OAuth2TokenCache) NewToken(ctx context.Context, code string) (*oauth2.T
 		return nil, err
 	}
 	fmt.Printf("PUTTING into cache: %s", tok.AccessToken)
-	t.Tokens[tok.AccessToken] = &UserCache {
+	t.Tokens[tok.AccessToken] = &UserCache{
 		Token: tok,
-		User: user,
-		Http: httpCli,
+		User:  user,
+		Http:  httpCli,
 		Drive: driveCli,
 	}
 
