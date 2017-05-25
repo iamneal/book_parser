@@ -45,3 +45,5 @@ client_secret*.json
 **/yarn-error.log*
 **/user_files
 
+**/*~
+**/#*#
